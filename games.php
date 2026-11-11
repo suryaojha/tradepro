@@ -2,7 +2,6 @@
 require_once __DIR__ . '/includes/bootstrap.php';
 
 $u = user_page_start('Play', 'games.php');
-play_nav('hub');
 $demo = wallets_of((int)$u['id'])['demo'];
 $modes = cg_modes();
 $last = games_on() && cg_on() ? q('SELECT result FROM cg_rounds WHERE secs = ? AND settled_at IS NOT NULL ORDER BY start_ts DESC LIMIT 8', [$modes[0]])->fetchAll(PDO::FETCH_COLUMN) : [];
