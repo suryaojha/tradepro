@@ -23,7 +23,7 @@ function asset_payout(array $asset): float
 function sentiment(int $assetId): array
 {
     $r = q("SELECT COALESCE(SUM(direction = 'up'), 0) up, COALESCE(SUM(direction = 'down'), 0) dn
-            FROM trades WHERE asset_id = ? AND open_ts >= ?', [$assetId, time() - 900])->fetch();
+            FROM trades WHERE asset_id = ? AND open_ts >= ?", [$assetId, time() - 900])->fetch();
     $up = (int)$r['up'];
     $dn = (int)$r['dn'];
     return ['up' => $up, 'down' => $dn, 'total' => $up + $dn];
