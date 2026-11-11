@@ -10,14 +10,14 @@ function pnl_summary(int $uid): array
     $d30 = gmdate('Y-m-d H:i:s', time() - 30 * 86400);
     $out = [];
     foreach (ACCOUNTS as $a) $out[$a] = ['today' => 0.0, 'd7' => 0.0, 'd30' => 0.0, 'all' => 0.0, 'n' => 0, 'won' => 0, 'lost' => 0, 'draw' => 0, 'staked' => 0.0];
-    $rows = q('SELECT account_type a,
+    $rows = q("SELECT account_type a,
                       COALESCE(SUM(CASE WHEN settled_at >= ? THEN profit ELSE 0 END), 0) d,
                       COALESCE(SUM(CASE WHEN settled_at >= ? THEN profit ELSE 0 END), 0) w,
                       COALESCE(SUM(CASE WHEN settled_at >= ? THEN profit ELSE 0 END), 0) m,
                       COALESCE(SUM(profit), 0) t, COUNT(*) n,
-                      COALESCE(SUM(status = "won"), 0) won, COALESCE(SUM(status = "lost"), 0) lost, COALESCE(SUM(status = "draw"), 0) draw,
+                      COALESCE(SUM(status = 'won'), 0) won, COALESCE(SUM(status = 'lost'), 0) lost, COALESCE(SUM(status = 'draw'), 0) draw,
                       COALESCE(SUM(amount), 0) staked
-               FROM trades WHERE user_id = ? AND status <> "open" GROUP BY account_type', [$today, $d7, $d30, $uid])->fetchAll();
+               FROM trades WHERE user_id = ? AND status <> 'open' GROUP BY account_type", [$today, $d7, $d30, $uid])->fetchAll();
     foreach ($rows as $r) {
         $out[$r['a']] = ['today' => (float)$r['d'], 'd7' => (float)$r['w'], 'd30' => (float)$r['m'], 'all' => (float)$r['t'], 'n' => (int)$r['n'],
                          'won' => (int)$r['won'], 'lost' => (int)$r['lost'], 'draw' => (int)$r['draw'], 'staked' => (float)$r['staked']];
@@ -28,9 +28,9 @@ function pnl_summary(int $uid): array
 /** Profit/loss by market for one account. */
 function pnl_by_asset(int $uid, string $acc): array
 {
-    return q('SELECT a.symbol, COUNT(*) n, SUM(t.status = "won") won, SUM(t.status = "lost") lost, SUM(t.amount) staked, SUM(t.profit) pnl
+    return q("SELECT a.symbol, COUNT(*) n, SUM(t.status = 'won') won, SUM(t.status = 'lost') lost, SUM(t.amount) staked, SUM(t.profit) pnl
               FROM trades t JOIN assets a ON a.id = t.asset_id
-              WHERE t.user_id = ? AND t.account_type = ? AND t.status <> "open" GROUP BY a.id ORDER BY pnl DESC', [$uid, $acc])->fetchAll();
+              WHERE t.user_id = ? AND t.account_type = ? AND t.status <> 'open' GROUP BY a.id ORDER BY pnl DESC", [$uid, $acc])->fetchAll();
 }
 
 function pnl_class($v): string
