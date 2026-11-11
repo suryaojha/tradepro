@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             session_regenerate_id(true);
             $_SESSION['uid'] = (int)$u['id'];
+            $_SESSION['games_ok'] = 'login';
             $_SESSION['pin_ok'] = (empty($u['app_lock']) || empty($u['pin_hash'])) ? 1 : 0;
             if (in_array($u['theme'] ?? '', ['light', 'dark'], true)) {      // bring the user's saved theme to this device
                 setcookie('theme', $u['theme'], ['expires' => time() + 31536000, 'path' => '/', 'secure' => FORCE_HTTPS_COOKIES, 'samesite' => 'Lax']);
