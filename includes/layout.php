@@ -197,6 +197,6 @@ function select2_assets(): void
 function password_field(string $name, string $label, bool $meter = false, string $autocomplete = 'new-password'): string
 {
     return '<div class="field"><label>' . e($label) . '</label><div class="pwbox"><input type="password" name="' . e($name) . '" required autocomplete="' . e($autocomplete) . '"' . ($meter ? ' data-meter' : '') . '>'
-        . '<button type="button" class="pwtoggle" data-pwtoggle tabindex="-1" aria-label="Show password">Show</button></div>'
+        . '<button type="button" class="pwtoggle" data-pwtoggle tabindex="0" aria-label="Show password" aria-pressed="false">Show</button></div>'
         . ($meter ? '<div class="meter"><i></i></div><div class="meterhint muted">' . e(PASSWORD_HINT) . '</div>' : '') . '</div>';
 }
