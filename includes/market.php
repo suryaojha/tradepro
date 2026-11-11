@@ -274,9 +274,9 @@ function fetch_quotes(array $assets): array
 // ---------------------------------------------------------------- cached quotes
 function quote_assets(): array
 {
-    return q('SELECT id, symbol, provider, source_symbol, decimals FROM assets
+    return q("SELECT id, symbol, provider, source_symbol, decimals FROM assets
               WHERE provider IS NOT NULL AND source_symbol IS NOT NULL
-                AND (is_active = 1 OR id IN (SELECT DISTINCT asset_id FROM trades WHERE status = 'open'))')->fetchAll();
+                AND (is_active = 1 OR id IN (SELECT DISTINCT asset_id FROM trades WHERE status = 'open'))")->fetchAll();
 }
 
 /**
@@ -291,7 +291,7 @@ function quotes_get(array $focus = [], bool $wait = false): array
     $cache = cache_read('quotes.json');
     $focus = array_flip(array_map('intval', $focus));
 
-    $open = array_flip(array_map('intval', q('SELECT DISTINCT asset_id FROM trades WHERE status = 'open'')->fetchAll(PDO::FETCH_COLUMN)));
+    $open = array_flip(array_map('intval', q("SELECT DISTINCT asset_id FROM trades WHERE status = 'open'")->fetchAll(PDO::FETCH_COLUMN)));
     $ttlFocus = max(1, (int)setting('quote_ttl_focus', 2));
     $ttlBg    = max(2, (int)setting('quote_ttl_bg', 10));
     $ttlApi   = max(3, (int)setting('quote_ttl_api', 10));
