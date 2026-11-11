@@ -22,7 +22,7 @@ function asset_payout(array $asset): float
 /** What other traders predict on a market over the last 15 minutes (anonymous totals). */
 function sentiment(int $assetId): array
 {
-    $r = q('SELECT COALESCE(SUM(direction = "up"), 0) up, COALESCE(SUM(direction = "down"), 0) dn
+    $r = q("SELECT COALESCE(SUM(direction = 'up'), 0) up, COALESCE(SUM(direction = 'down'), 0) dn
             FROM trades WHERE asset_id = ? AND open_ts >= ?', [$assetId, time() - 900])->fetch();
     $up = (int)$r['up'];
     $dn = (int)$r['dn'];
@@ -101,7 +101,7 @@ function reset_demo(int $uid): void
     $pdo = db();
     $pdo->beginTransaction();
     try {
-        $cur = (float)q('SELECT balance FROM wallets WHERE user_id = ? AND type = "demo" FOR UPDATE', [$uid])->fetchColumn();
+        $cur = (float)q("SELECT balance FROM wallets WHERE user_id = ? AND type = 'demo' FOR UPDATE", [$uid])->fetchColumn();
         $target = (float)setting('demo_balance', 0);
         if (abs($target - $cur) > 0.00005) {
             wallet_adjust($uid, 'demo', $target - $cur, 'demo_reset', null, 'Demo balance reset');
@@ -143,7 +143,7 @@ function place_trade(array $user, int $assetId, string $dir, float $amount, int 
     if ($amount < $min || $amount > $max) {
         throw new RuntimeException('Amount must be between ' . money($min, $acc) . ' and ' . money($max, $acc) . '.');
     }
-    $openCount = (int)q('SELECT COUNT(*) FROM trades WHERE user_id = ? AND status = "open"', [$user['id']])->fetchColumn();
+    $openCount = (int)q("SELECT COUNT(*) FROM trades WHERE user_id = ? AND status = 'open'", [$user['id']])->fetchColumn();
     if ($openCount >= (int)setting('max_open_trades', 20)) {
         throw new RuntimeException('Too many open trades. Wait for some to expire.');
     }
@@ -267,7 +267,7 @@ function settle_trade(int $id): void
 
 function settle_due(?int $uid = null): void
 {
-    $sql = 'SELECT id FROM trades WHERE status = "open" AND expiry_ts <= ?';
+    $sql = "SELECT id FROM trades WHERE status = 'open' AND expiry_ts <= ?";
     $args = [time()];
     if ($uid !== null) {
         $sql .= ' AND user_id = ?';
