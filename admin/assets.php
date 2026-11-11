@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($cprov !== '' && (!isset(PROVIDERS[$cprov]) || $csym === '' || strlen($csym) > 40)) throw new RuntimeException($a['symbol'] . ': enter the chart symbol or set the chart source to "same as price".');
                 $changed = $prov !== $a['provider'] || $sym !== $a['source_symbol'];
                 if ($changed) {
-                    if (q('SELECT 1 FROM trades WHERE asset_id = ? AND status = "open" LIMIT 1', [$aid])->fetchColumn()) {
+                    if (q("SELECT 1 FROM trades WHERE asset_id = ? AND status = 'open' LIMIT 1", [$aid])->fetchColumn()) {
                         throw new RuntimeException($a['symbol'] . ' has open trades – change its price source after they expire.');
                     }
                     $t = provider_test($prov, $sym);
@@ -170,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 admin_start('Markets', 'assets.php');
 $assets = q('SELECT a.*, (SELECT COUNT(*) FROM trades WHERE asset_id = a.id) tc,
-                    (SELECT COUNT(*) FROM trades WHERE asset_id = a.id AND status = "open") oc
+                    (SELECT COUNT(*) FROM trades WHERE asset_id = a.id AND status = 'open') oc
              FROM assets a ORDER BY sort_order, id')->fetchAll();
 $quotes = quotes_get();
 $globalPayout = (float)setting('payout_percent', 85);
