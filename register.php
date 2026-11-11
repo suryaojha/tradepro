@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pass  = (string)($_POST['password'] ?? '');
     $pass2 = (string)($_POST['password2'] ?? '');
 
-    if (setting('registration_open', '1') !== '1') $err = 'Registration is currently closed.';
+    if (!captcha_check()) $err = 'Security check failed. Please try again.';\n    elseif (setting('registration_open', '1') !== '1') $err = 'Registration is currently closed.';
     elseif (!throttle_ok('reg', 5, 600)) $err = 'Too many attempts. Try again in a few minutes.';
     elseif ($f['name'] === '' || mb_strlen($f['name']) > 100) $err = 'Enter your name.';
     elseif (!filter_var($f['email'], FILTER_VALIDATE_EMAIL) || strlen($f['email']) > 150) $err = 'Enter a valid email address.';
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-page_head('Sign up');
+if ($err) captcha_reset();\npage_head('Sign up');
 ?>
 <div class="authwrap"><div class="authbox">
   <?= logo_html() ?>
@@ -62,7 +62,7 @@ page_head('Sign up');
     <?= password_field('password', 'Password', true) ?>
     <?= password_field('password2', 'Confirm password') ?>
     <div class="field"><label class="check"><input type="checkbox" name="terms" value="1"> <span>I understand trading is risky and I may lose my deposit.</span></label></div>
-    <button class="btn block" type="submit">Create account</button>
+    <?= captcha_field() ?>\n    <button class="btn block" type="submit">Create account</button>
   </form>
   <p class="center muted" style="margin-top:16px">Already registered? <a href="<?= e(url('login.php')) ?>">Log in</a></p>
 </div></div>
