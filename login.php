@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $err = 'Please wait a few minutes before asking for another email.';
         } else {
             throttle_hit('resend');
-            $u = q('SELECT * FROM users WHERE email = ? AND email_verified_at IS NULL AND status = "active"', [$email])->fetch();
+            $u = q("SELECT * FROM users WHERE email = ? AND email_verified_at IS NULL AND status = 'active'", [$email])->fetch();
             if ($u && email_verification_required()) send_verify_email($u);
             $info = 'If that account still needs confirmation, a new email is on its way.';
         }
