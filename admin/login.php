@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_require();
     $email = strtolower(trim($_POST['email'] ?? ''));
     $pass  = (string)($_POST['password'] ?? '');
-    if (!throttle_ok('admin_login', 5, 600)) {
+    if (!captcha_check()) {\n        $err = 'Security check failed. Please try again.';\n    } elseif (!throttle_ok('admin_login', 5, 600)) {
         $err = 'Too many failed attempts. Wait 10 minutes.';
     } else {
         $a = q('SELECT * FROM admins WHERE email = ?', [$email])->fetch();
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $err = 'Wrong email or password.';
     }
 }
-page_head('Admin login');
+if ($err) captcha_reset();\npage_head('Admin login');
 ?>
 <div class="authwrap"><div class="authbox">
   <?= logo_html() ?>
@@ -39,7 +39,7 @@ page_head('Admin login');
     <?= csrf_field() ?>
     <div class="field"><label>Admin email</label><input type="email" name="email" value="<?= e($email) ?>" required autofocus autocomplete="username"></div>
     <?= password_field('password', 'Password', false, 'current-password') ?>
-    <button class="btn block" type="submit">Sign in</button>
+    <?= captcha_field() ?>\n    <button class="btn block" type="submit">Sign in</button>
   </form>
   <div class="links"><a href="<?= e(url('admin/forgot.php')) ?>">Forgot password?</a><a href="<?= e(url('')) ?>">← Back to site</a></div>
 </div></div>
