@@ -1,0 +1,11 @@
+Options -Indexes
+
+# Don't serve docs, config, keys or locks over HTTP
+<FilesMatch "\.(sql|md|key|lock|log)$|^config\.php$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</FilesMatch>

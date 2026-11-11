@@ -1,0 +1,16 @@
+# Runtime data and secrets – never commit
+storage/*
+!storage/.htaccess
+!storage/index.html
+!storage/kyc/
+storage/kyc/*
+!storage/kyc/.htaccess
+storage/app.key
+
+# Local / editor / OS
+.claude/
+.vscode/
+.idea/
+*.log
+Thumbs.db
+.DS_Store
