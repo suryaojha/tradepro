@@ -39,6 +39,9 @@ function db(): PDO
                     PDO::MYSQL_ATTR_FOUND_ROWS   => true,
                 ]
             );
+            // Wasmer MySQL may enable ANSI_QUOTES, which makes the app's double-quoted SQL values look like column names.
+            // Disable that mode for this connection so SQL string comparisons behave consistently.
+            $pdo->exec("SET SESSION sql_mode = REPLACE(@@SESSION.sql_mode, 'ANSI_QUOTES', '')");
             $pdo->exec("SET time_zone = '+00:00'");
         } catch (PDOException $ex) {
             if (PHP_SAPI === 'cli') {
