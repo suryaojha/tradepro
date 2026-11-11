@@ -3,21 +3,21 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $u = user_page_start('Period Simulator', 'games.php');
 $uid = (int)$u['id'];
 // Publish due classroom fixtures once, then settle virtual entries exactly once.
-$due = q('SELECT * FROM sim_periods WHERE status="scheduled" AND scheduled_at<=UTC_TIMESTAMP() AND result IS NOT NULL ORDER BY id LIMIT 100')->fetchAll();
+$due = q("SELECT * FROM sim_periods WHERE status='scheduled' AND scheduled_at<=UTC_TIMESTAMP() AND result IS NOT NULL ORDER BY id LIMIT 100")->fetchAll();
 foreach ($due as $fixture) {
     db()->beginTransaction();
     try {
-        $locked = q('SELECT * FROM sim_periods WHERE id=? AND status="scheduled" FOR UPDATE', [(int)$fixture['id']])->fetch();
+        $locked = q("SELECT * FROM sim_periods WHERE id=? AND status='scheduled' FOR UPDATE", [(int)$fixture['id']])->fetch();
         if ($locked) {
-            q('UPDATE sim_periods SET status="published",published_at=UTC_TIMESTAMP() WHERE id=?', [(int)$locked['id']]);
-            $entries = q('SELECT * FROM sim_entries WHERE period_id=? AND status="pending" FOR UPDATE', [(int)$locked['id']])->fetchAll();
+            q("UPDATE sim_periods SET status='published',published_at=UTC_TIMESTAMP() WHERE id=?", [(int)$locked['id']]);
+            $entries = q("SELECT * FROM sim_entries WHERE period_id=? AND status='pending' FOR UPDATE", [(int)$locked['id']])->fetchAll();
             foreach ($entries as $entry) {
                 if ($entry['direction'] === $locked['result']) {
                     $payout = round((float)$entry['amount'] * 1.8, 4);
-                    q('UPDATE sim_entries SET status="won" WHERE id=?', [(int)$entry['id']]);
+                    q("UPDATE sim_entries SET status='won' WHERE id=?", [(int)$entry['id']]);
                     q('UPDATE sim_wallets SET balance=balance+? WHERE user_id=? AND currency=?', [$payout,(int)$entry['user_id'],$entry['currency']]);
                 } else {
-                    q('UPDATE sim_entries SET status="lost" WHERE id=?', [(int)$entry['id']]);
+                    q("UPDATE sim_entries SET status='lost' WHERE id=?", [(int)$entry['id']]);
                 }
             }
         }
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $periodId=(int)($_POST['period_id']??0); $currency=$_POST['currency']??''; $direction=$_POST['direction']??''; $amount=round((float)($_POST['amount']??0),4);
         if (!in_array($currency,['INR','USDT'],true) || !in_array($direction,['UP','DOWN'],true) || $amount<=0 || $amount>100000) throw new RuntimeException('Invalid simulation entry.');
         db()->beginTransaction();
-        $p=q('SELECT * FROM sim_periods WHERE id=? AND status="scheduled" AND scheduled_at>UTC_TIMESTAMP() FOR UPDATE',[$periodId])->fetch();
+        $p=q("SELECT * FROM sim_periods WHERE id=? AND status='scheduled' AND scheduled_at>UTC_TIMESTAMP() FOR UPDATE",[$periodId])->fetch();
         if (!$p) throw new RuntimeException('This period is closed. Select a future period.');
         $w=q('SELECT balance FROM sim_wallets WHERE user_id=? AND currency=? FOR UPDATE',[$uid,$currency])->fetch();
         if (!$w || (float)$w['balance']<$amount) throw new RuntimeException('Insufficient virtual balance.');
@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch(Throwable $e) { if(db()->inTransaction()) db()->rollBack(); flash('err',$e instanceof RuntimeException?$e->getMessage():'Could not save entry.'); }
     redirect('simulation.php');
 }
-$periods=q('SELECT * FROM sim_periods WHERE status="scheduled" AND scheduled_at>UTC_TIMESTAMP() ORDER BY scheduled_at LIMIT 20')->fetchAll();
+$periods=q("SELECT * FROM sim_periods WHERE status='scheduled' AND scheduled_at>UTC_TIMESTAMP() ORDER BY scheduled_at LIMIT 20")->fetchAll();
 $wallet=q('SELECT * FROM sim_wallets WHERE user_id=? ORDER BY currency',[$uid])->fetchAll();
 $history=q('SELECT e.*,p.period_no,p.result,p.status period_status FROM sim_entries e JOIN sim_periods p ON p.id=e.period_id WHERE e.user_id=? ORDER BY e.id DESC LIMIT 30',[$uid])->fetchAll();
 ?>
