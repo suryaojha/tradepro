@@ -69,10 +69,10 @@ $accSql = $accF ? ' AND account_type = ' . db()->quote($accF) : '';
     $winRate = $closed ? round(100 * $S['won'] / $closed) : 0;
     $flow = ['deposit' => 0.0, 'withdraw' => 0.0];
     if ($cur !== 'demo') {
-        foreach (q('SELECT type, SUM(amount) s FROM payment_requests WHERE user_id = ? AND account_type = ? AND status = "approved" GROUP BY type', [$uid, $cur])->fetchAll() as $r) $flow[$r['type']] = (float)$r['s'];
+        foreach (q("SELECT type, SUM(amount) s FROM payment_requests WHERE user_id = ? AND account_type = ? AND status = 'approved' GROUP BY type", [$uid, $cur])->fetchAll() as $r) $flow[$r['type']] = (float)$r['s'];
     }
     $byAsset = pnl_by_asset($uid, $cur);
-    $open = (int)q('SELECT COUNT(*) FROM trades WHERE user_id = ? AND account_type = ? AND status = "open"', [$uid, $cur])->fetchColumn();
+    $open = (int)q("SELECT COUNT(*) FROM trades WHERE user_id = ? AND account_type = ? AND status = 'open'", [$uid, $cur])->fetchColumn();
     $net = $S['all'];
 ?>
   <div class="tabs">
