@@ -563,7 +563,7 @@ function schema_install(PDO $pdo): array
     foreach (['pay_upi_id' => 'yourname@upi', 'pay_usdt_trc20' => 'TXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
               'pay_usdt_bep20' => '0x0000000000000000000000000000000000000000',
               'pay_bank_details' => 'Bank: XYZ Bank | A/C: 0000000000 | IFSC: XYZB0000000 | Name: Your Company'] as $k => $old) {
-        $pdo->prepare('UPDATE settings SET v = "" WHERE k = ? AND v = ?')->execute([$k, $old]);
+        $pdo->prepare('UPDATE settings SET v = ? WHERE k = ? AND v = ?')->execute(['', $k, $old]);
     }
     $pdo->prepare("UPDATE settings SET v = 'auto' WHERE k = 'usdt_rate_mode' AND ? < 4")->execute([$from]);
 
