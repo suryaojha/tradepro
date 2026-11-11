@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         q('INSERT INTO kyc (user_id, full_name, pan_number, aadhaar_last4, pan_file, aadhaar_file, status, admin_note, submitted_at, reviewed_at)
            VALUES (?,?,?,?,?,?, "pending", NULL, NOW(), NULL)
            ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), pan_number = VALUES(pan_number), aadhaar_last4 = VALUES(aadhaar_last4),
-             pan_file = VALUES(pan_file), aadhaar_file = VALUES(aadhaar_file), status = "pending", admin_note = NULL, submitted_at = NOW(), reviewed_at = NULL',
+             pan_file = VALUES(pan_file), aadhaar_file = VALUES(aadhaar_file), status = 'pending', admin_note = NULL, submitted_at = NOW(), reviewed_at = NULL",
             [$uid, $name, $pan, $last4, $panFile, $aadFile]);
         q('UPDATE users SET phone = ? WHERE id = ?', [$phone, $uid]);
         notify_admins('New KYC submission', '<p><b>' . e($u['name']) . '</b> (' . e($u['email']) . ') submitted PAN / Aadhaar documents for review.</p>', 'Review', abs_url('admin/kyc.php'));
