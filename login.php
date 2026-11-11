@@ -11,7 +11,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_require();
     $email = strtolower(trim($_POST['email'] ?? ''));
     $pass  = (string)($_POST['password'] ?? '');
-    if (!captcha_check()) {\n        $err = 'Security check failed. Please try again.';\n    } elseif (($_POST['action'] ?? '') === 'resend') {
+    if (!captcha_check()) {
+        $err = 'Security check failed. Please try again.';
+    } elseif (($_POST['action'] ?? '') === 'resend') {
         if (!throttle_ok('resend', 3, 600)) {
             $err = 'Please wait a few minutes before asking for another email.';
         } else {
@@ -44,7 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-if ($err) captcha_reset();\npage_head('Log in');
+if ($err) captcha_reset();
+page_head('Log in');
 ?>
 <div class="authwrap"><div class="authbox">
   <?= logo_html() ?>
@@ -56,7 +59,8 @@ if ($err) captcha_reset();\npage_head('Log in');
     <?= csrf_field() ?>
     <div class="field"><label>Email</label><input type="email" name="email" value="<?= e($email) ?>" required autofocus autocomplete="email"></div>
     <?= password_field('password', 'Password', false, 'current-password') ?>
-    <?= captcha_field() ?>\n    <button class="btn block" type="submit">Log in</button>
+    <?= captcha_field() ?>
+    <button class="btn block" type="submit">Log in</button>
     <?php if ($unverified): ?>
       <button class="btn ghost block" style="margin-top:8px" type="submit" name="action" value="resend" formnovalidate>Resend confirmation email</button>
     <?php endif; ?>
