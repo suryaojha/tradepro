@@ -164,6 +164,8 @@
         var show = inp.type === 'password';
         inp.type = show ? 'text' : 'password';
         btn.textContent = show ? 'Hide' : 'Show';
+        btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        btn.setAttribute('aria-pressed', show ? 'true' : 'false');
       });
     });
     document.querySelectorAll('input[data-meter]').forEach(function (inp) {
