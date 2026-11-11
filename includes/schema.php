@@ -3,7 +3,7 @@
  * Database schema, defaults and upgrades. Idempotent: safe to run any number of times.
  * Used by install.php (and automatically requested by bootstrap when the version is old).
  */
-const SCHEMA_VERSION = 12;
+const SCHEMA_VERSION = 13;
 
 /** TradingView symbols for the starter markets (admin can change them per market). */
 function default_tv_symbols(): array
@@ -404,6 +404,9 @@ function schema_install(PDO $pdo): array
         KEY `idx_kyc_status` (`status`),
         CONSTRAINT `fk_kyc_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+    'sim_wallets' => "CREATE TABLE IF NOT EXISTS `sim_wallets` (`user_id` INT UNSIGNED NOT NULL, `currency` ENUM('INR','USDT') NOT NULL, `balance` DECIMAL(18,4) NOT NULL DEFAULT 0, PRIMARY KEY (`user_id`,`currency`), CONSTRAINT `fk_sim_wallet_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+    'sim_periods' => "CREATE TABLE IF NOT EXISTS `sim_periods` (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, `period_no` VARCHAR(40) NOT NULL, `scheduled_at` DATETIME NOT NULL, `result` ENUM('UP','DOWN') NULL, `status` ENUM('scheduled','published') NOT NULL DEFAULT 'scheduled', `created_by` INT UNSIGNED NOT NULL, `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, `published_at` DATETIME NULL, PRIMARY KEY (`id`), UNIQUE KEY `uq_sim_period` (`period_no`), KEY `idx_sim_period_schedule` (`scheduled_at`,`status`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+    'sim_entries' => "CREATE TABLE IF NOT EXISTS `sim_entries` (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, `user_id` INT UNSIGNED NOT NULL, `period_id` BIGINT UNSIGNED NOT NULL, `currency` ENUM('INR','USDT') NOT NULL, `direction` ENUM('UP','DOWN') NOT NULL, `amount` DECIMAL(18,4) NOT NULL, `status` ENUM('pending','won','lost') NOT NULL DEFAULT 'pending', `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`), KEY `idx_sim_entry_user` (`user_id`,`id`), KEY `idx_sim_entry_period` (`period_id`), CONSTRAINT `fk_sim_entry_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE, CONSTRAINT `fk_sim_entry_period` FOREIGN KEY (`period_id`) REFERENCES `sim_periods`(`id`) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
     'mail_log' => "CREATE TABLE IF NOT EXISTS `mail_log` (
         `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
         `to_email` VARCHAR(150) NOT NULL,
