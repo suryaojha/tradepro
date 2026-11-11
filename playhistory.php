@@ -45,12 +45,12 @@ $demo = wallets_of($uid)['demo'];
   <?php endif; ?></div>
 
 <?php else:
-    $cg = q('SELECT COUNT(*) n, COALESCE(SUM(status="won"),0) w, COALESCE(SUM(amount),0) staked, COALESCE(SUM(payout),0) ret FROM cg_bets WHERE user_id = ? AND status <> "open"', [$uid])->fetch();
-    $mk = q('SELECT COUNT(*) n, COALESCE(SUM(status="won"),0) w, COALESCE(SUM(amount),0) staked, COALESCE(SUM(payout),0) ret FROM mk_bets WHERE user_id = ? AND status <> "open"', [$uid])->fetch();
+    $cg = q("SELECT COUNT(*) n, COALESCE(SUM(status='won'),0) w, COALESCE(SUM(amount),0) staked, COALESCE(SUM(payout),0) ret FROM cg_bets WHERE user_id = ? AND status <> 'open'", [$uid])->fetch();
+    $mk = q("SELECT COUNT(*) n, COALESCE(SUM(status='won'),0) w, COALESCE(SUM(amount),0) staked, COALESCE(SUM(payout),0) ret FROM mk_bets WHERE user_id = ? AND status <> 'open'", [$uid])->fetch();
     $net = fn($x) => (float)$x['ret'] - (float)$x['staked'];
     $tot = ['n' => $cg['n'] + $mk['n'], 'w' => $cg['w'] + $mk['w'], 'staked' => $cg['staked'] + $mk['staked'], 'ret' => $cg['ret'] + $mk['ret']];
-    $union = 'SELECT "🎨 Colour" g, b.created_at, CONCAT(r.period_no, " · ", b.pick) d, b.amount, b.payout FROM cg_bets b JOIN cg_rounds r ON r.id = b.round_id WHERE b.user_id = ? AND b.status = "won"
-              UNION ALL SELECT "🔢 Lucky", b.created_at, CONCAT(m.name, " · ", b.game, " ", b.pick), b.amount, b.payout FROM mk_bets b JOIN mk_markets m ON m.id = b.market_id WHERE b.user_id = ? AND b.status = "won"';
+    $union = "SELECT '🎨 Colour' g, b.created_at, CONCAT(r.period_no, ' · ', b.pick) d, b.amount, b.payout FROM cg_bets b JOIN cg_rounds r ON r.id = b.round_id WHERE b.user_id = ? AND b.status = 'won'
+              UNION ALL SELECT '🔢 Lucky', b.created_at, CONCAT(m.name, ' · ', b.game, ' ', b.pick), b.amount, b.payout FROM mk_bets b JOIN mk_markets m ON m.id = b.market_id WHERE b.user_id = ? AND b.status = 'won'";
     $total = (int)q("SELECT COUNT(*) FROM ($union) x", [$uid, $uid])->fetchColumn();
     $rows = q("$union ORDER BY created_at DESC LIMIT $per OFFSET $off", [$uid, $uid])->fetchAll();
     $pages = max(1, (int)ceil($total / $per));
