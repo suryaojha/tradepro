@@ -10,7 +10,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $dt=DateTime::createFromFormat('Y-m-d\\TH:i',$when,new DateTimeZone('UTC'));
   if(!$dt || $dt->getTimestamp()<=time()+60) throw new RuntimeException('Schedule the test period at least one minute in the future (UTC).');
   if(!in_array($result,['UP','DOWN'],true)) throw new RuntimeException('Choose a test result.');
-  q('INSERT INTO sim_periods (period_no,scheduled_at,result,status,created_by) VALUES (?,?,?,"scheduled",?) ON DUPLICATE KEY UPDATE scheduled_at=VALUES(scheduled_at),result=VALUES(result),status="scheduled",published_at=NULL,created_by=VALUES(created_by)',[$period,$dt->format('Y-m-d H:i:s'),$result,(int)current_admin()['id']]);
+  q('INSERT INTO sim_periods (period_no,scheduled_at,result,status,created_by) VALUES (?,?,?,'scheduled',?) ON DUPLICATE KEY UPDATE scheduled_at=VALUES(scheduled_at),result=VALUES(result),status='scheduled',published_at=NULL,created_by=VALUES(created_by)",[$period,$dt->format('Y-m-d H:i:s'),$result,(int)current_admin()['id']]);
   admin_log('simulation_period_scheduled',$period.' TEST '.$result); flash('ok','Test period scheduled. It is visibly labelled as simulated.');
  }catch(Throwable $e){flash('err',$e instanceof RuntimeException?$e->getMessage():'Could not save test period.');}
  redirect('admin/simulation.php');
