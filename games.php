@@ -14,7 +14,7 @@ $pin = pin_is_set($u);
   <div class="gamewallet"><small>Demo coins</small><b><?= e(money($demo, 'demo')) ?></b></div>
 </div>
 
-<div class="card" style="margin:16px 0">
+<div class="card" style="margin:16px 0"><div class="inline" style="justify-content:space-between;gap:12px"><div><h2 style="margin:0">Period Simulator</h2><p class="muted" style="margin:5px 0 0">Practice with virtual INR / USDT credits only</p></div><a class="btn sm" href="<?= e(url('simulation.php')) ?>">Open simulator →</a></div></div>\n<div class="card" style="margin:16px 0">
   <div class="inline" style="justify-content:space-between;gap:12px"><div><h2 style="margin:0">BigBang Casino</h2><p class="muted" style="margin:5px 0 0">External standard games · sandbox demo only</p></div><a class="btn sm" href="<?= e(url('bigbang.php')) ?>">Open demo lobby →</a></div>
 </div>
 
