@@ -11,6 +11,7 @@ function admin_start(string $title, string $active): array
         'kyc.php'      => ['KYC (PAN / Aadhaar)', 'shield', (int)q('SELECT COUNT(*) FROM kyc WHERE status = "pending"')->fetchColumn()],
         'trades.php'   => ['Trades', 'list', 0],
         'games.php'    => ['Games', 'games', 0],
+        'bigbang.php'   => ['BigBang Sandbox', 'gamepad', 0],
         'settings.php' => ['Settings', 'settings', 0],
     ];
     page_head('Admin · ' . $title, 'is-admin');
