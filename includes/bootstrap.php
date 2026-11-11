@@ -122,6 +122,27 @@ function flashes(): array
     return $f;
 }
 
+// ---------------------------------------------------------------- lightweight accessible math CAPTCHA
+function captcha_reset(): void
+{
+    $a = random_int(2, 9);
+    $b = random_int(1, 9);
+    $_SESSION['captcha_answer'] = (string)($a + $b);
+    $_SESSION['captcha_question'] = $a . ' + ' . $b;
+}
+function captcha_field(): string
+{
+    if (empty($_SESSION['captcha_answer']) || empty($_SESSION['captcha_question'])) captcha_reset();
+    return '<div class="field captcha-field"><label for="captcha_answer">Security check: what is ' . e($_SESSION['captcha_question']) . '?</label><input id="captcha_answer" type="number" name="captcha_answer" inputmode="numeric" min="0" max="20" required autocomplete="off" placeholder="Enter the answer"></div>';
+}
+function captcha_check(): bool
+{
+    $expected = (string)($_SESSION['captcha_answer'] ?? '');
+    $provided = trim((string)($_POST['captcha_answer'] ?? ''));
+    unset($_SESSION['captcha_answer'], $_SESSION['captcha_question']);
+    return $expected !== '' && $provided !== '' && hash_equals($expected, $provided);
+}
+
 // ---------------------------------------------------------------- CSRF
 function csrf_token(): string
 {
@@ -149,7 +170,10 @@ function csrf_require(): void
         if (is_api_request()) {
             json_out(['ok' => false, 'error' => 'Session expired. Reload the page.'], 419);
         }
-        exit('Invalid or expired form token. Go back, reload and try again.');
+        $isAdmin = str_starts_with($_SERVER['SCRIPT_NAME'] ?? '', '/admin/');
+        $login = $isAdmin ? url('admin/login.php') : url('login.php');
+        $back = e($login);
+        exit('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Session expired · TradePro</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1020;color:#e9eefc;font:16px system-ui;padding:20px;box-sizing:border-box"><main style="max-width:440px;background:#121a2e;border:1px solid #26314f;border-radius:16px;padding:28px"><h1 style="font-size:23px">Your session expired</h1><p style="color:#aab5d0;line-height:1.6">For your security, this form was not submitted. Sign in again, then retry your action.</p><a href="' . $back . '" style="display:inline-block;background:#3568e0;color:white;text-decoration:none;padding:11px 18px;border-radius:9px;font-weight:600">Sign in again</a></main></body></html>');
     }
 }
 
