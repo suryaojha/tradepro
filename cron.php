@@ -22,5 +22,5 @@ if (games_on()) {
     foreach (cg_modes() as $s) cg_sync($s);     // colour game rounds
     mk_declare_due();                            // Lucky Number open / close results
 }
-$after = (int)q('SELECT COUNT(*) FROM trades WHERE status = "open"')->fetchColumn();
+$after = (int)q("SELECT COUNT(*) FROM trades WHERE status = 'open'")->fetchColumn();
 echo 'OK settled ' . max(0, $before - $after) . ", open now $after\n";
