@@ -18,7 +18,7 @@ function auth_forgot_page(string $kind): void
             $err = 'Password reset by email is not available yet because email (SMTP) is not configured. Please contact support.';
         } else {
             throttle_hit('forgot');
-            $row = q($isAdmin ? 'SELECT id, name, email FROM admins WHERE email = ?' : 'SELECT id, name, email FROM users WHERE email = ? AND status = "active"', [$email])->fetch();
+            $row = q($isAdmin ? 'SELECT id, name, email FROM admins WHERE email = ?' : "SELECT id, name, email FROM users WHERE email = ? AND status = 'active'", [$email])->fetch();
             if ($row) send_reset_email($kind, (int)$row['id'], $row['email'], $row['name']);
             $msg = 'If that email is registered, a reset link is on its way. It is valid for 1 hour.';
         }
