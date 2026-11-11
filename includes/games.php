@@ -29,7 +29,7 @@ function mult(string $key, float $default): float
 function games_unlocked(): bool
 {
     if (setting('games_pin_required', '1') !== '1') return true;
-    return !empty($_SESSION['games_ok']) && $_SESSION['games_ok'] > time();
+    return !empty($_SESSION['games_ok']) && $_SESSION['games_ok'] === 'login';
 }
 
 /** Shows the PIN screen (and stops) until the user has entered the 6-digit PIN for this session. */
@@ -48,7 +48,7 @@ function games_gate(array $u, string $active = 'games.php'): void
         csrf_require();
         $err = pin_check((int)$u['id'], (string)($_POST['pin'] ?? '')) ?? '';
         if ($err === '') {
-            $_SESSION['games_ok'] = time() + 1800;
+            $_SESSION['games_ok'] = 'login';
             header('Location: ' . ($_SERVER['REQUEST_URI'] ?? url('games.php')));
             exit;
         }
