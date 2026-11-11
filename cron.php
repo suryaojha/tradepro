@@ -15,7 +15,7 @@ if (PHP_SAPI !== 'cli') {
     header('Content-Type: text/plain');
 }
 
-$before = (int)q('SELECT COUNT(*) FROM trades WHERE status = "open"')->fetchColumn();
+$before = (int)q("SELECT COUNT(*) FROM trades WHERE status = 'open'")->fetchColumn();
 quotes_get([], false);
 settle_due();
 if (games_on()) {
