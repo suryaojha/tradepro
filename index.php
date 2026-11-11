@@ -103,7 +103,7 @@ page_head('Online Trading Platform', 'landing');
   </section>
 
   <section id="play" class="lsec">
-    <h2>Three ways to play – one wallet</h2>
+    <h2>Four ways to play</h2>
     <div class="grid g3 hubgrid">
       <a class="hubcard h1" href="<?= e(url('register.php')) ?>"><span class="hubic">📈</span><h3>Trading</h3><p>Predict UP or DOWN on live forex, crypto, gold and stocks with pro TradingView charts.</p><span class="hubtag">Real prices</span></a>
       <?php if (cg_on()): ?><a class="hubcard h2" href="<?= e(url('register.php')) ?>"><span class="hubic">🎨</span><h3>Colour Game</h3><p>Pick Green, Violet or Red – or a number – before each period ends.</p>
@@ -112,6 +112,7 @@ page_head('Online Trading Platform', 'landing');
       <?php if (mk_on()): ?><a class="hubcard h3" href="<?= e(url('register.php')) ?>"><span class="hubic">🔢</span><h3>Lucky Number</h3><p>Kalyan-style open / close market with jodi, panna and a results analysis chart.</p>
         <?php foreach ($mkToday as $row): ?><div class="mkres mono" style="font-size:16px;margin:2px 0"><span class="muted" style="font-size:12px;font-family:inherit"><?= e($row['name']) ?></span> <?= e(mk_text($row['r'])) ?></div><?php endforeach; ?>
         <span class="hubtag">Entertainment · Demo coins</span></a><?php endif; ?>
+      <a class="hubcard h4" href="<?= e(url('register.php')) ?>"><span class="hubic">🎮</span><h3>BigBang Casino</h3><p>Play available Standard games through BigBang's free sandbox demo. Uses BigBang's virtual balance, not your TradePro wallet.</p><span class="hubtag">Free sandbox · Demo only</span></a>
     </div>
     <p class="muted" style="font-size:12px;margin-top:10px">The Colour Game and Lucky Number are for fun only: they use virtual Demo coins with no cash value, and every result is drawn at random by the server.</p>
   </section>
@@ -138,6 +139,7 @@ page_head('Online Trading Platform', 'landing');
       <details><summary>Can the result of a trade be changed?</summary><p class="muted">No. A trade wins if the live price at expiry is on the side you predicted. If the price is exactly equal, your stake is returned.</p></details>
       <details><summary>How do deposits and withdrawals work?</summary><p class="muted">Deposit by UPI (QR or app), bank transfer or USDT and submit your reference; an admin verifies it. Withdrawals need your 6-digit PIN and are paid out manually.</p></details>
       <details><summary>Is there a demo account?</summary><p class="muted">Yes – every new user gets a virtual demo balance to practise. Demo money cannot be withdrawn.</p></details>
+      <details><summary>Are BigBang games free?</summary><p class="muted">Available Standard games can be launched in BigBang sandbox demo mode using BigBang virtual demo balance. Premium titles may not be available, and TradePro wallet funds are not used.</p></details>
     </div>
   </section>
 
