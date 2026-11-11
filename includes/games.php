@@ -140,7 +140,7 @@ function cg_settle_round(int $id): void
         if (!$r || $r['settled_at'] !== null || (int)$r['end_ts'] > time()) { $pdo->rollBack(); return; }
         $result = random_int(0, 9);                    // CSPRNG - the only source of results
         q('UPDATE cg_rounds SET result = ?, settled_at = NOW() WHERE id = ?', [$result, $id]);
-        foreach (q('SELECT * FROM cg_bets WHERE round_id = ? AND status = "open" FOR UPDATE', [$id])->fetchAll() as $b) {
+        foreach (q("SELECT * FROM cg_bets WHERE round_id = ? AND status = 'open' FOR UPDATE", [$id])->fetchAll() as $b) {
             $ret = cg_return($b['kind'], $b['pick'], $result, (float)$b['amount']);
             q('UPDATE cg_bets SET status = ?, payout = ? WHERE id = ?', [$ret > 0 ? 'won' : 'lost', dec($ret), $b['id']]);
             if ($ret > 0) wallet_adjust((int)$b['user_id'], 'demo', $ret, 'game_win', (int)$b['id'], 'Colour game ' . $r['period_no']);
@@ -320,7 +320,7 @@ function mk_win(array $b, array $r): bool
 function mk_settle(array $m, string $day, string $phase): void
 {
     $r = mk_ensure((int)$m['id'], $day);
-    $where = $phase === 'open' ? 'session = "open" AND game <> "jodi"' : '(session = "close" AND game <> "jodi") OR game = "jodi"';
+    $where = $phase === 'open' ? "session = 'open' AND game <> 'jodi'" : "(session = 'close' AND game <> 'jodi') OR game = 'jodi'";
     $bets = q("SELECT * FROM mk_bets WHERE market_id = ? AND day = ? AND status = 'open' AND ($where)", [$m['id'], $day])->fetchAll();
     foreach ($bets as $b) {
         $win = false;
@@ -331,7 +331,7 @@ function mk_settle(array $m, string $day, string $phase): void
         $pdo = db();
         $pdo->beginTransaction();
         try {
-            if (q('UPDATE mk_bets SET status = ?, payout = ? WHERE id = ? AND status = "open"', [$win ? 'won' : 'lost', dec($ret), $b['id']])->rowCount() === 1 && $win) {
+            if (q("UPDATE mk_bets SET status = ?, payout = ? WHERE id = ? AND status = 'open'", [$win ? 'won' : 'lost', dec($ret), $b['id']])->rowCount() === 1 && $win) {
                 wallet_adjust((int)$b['user_id'], 'demo', $ret, 'game_win', (int)$b['id'], $m['name'] . ' ' . $day . ' ' . $b['game']);
             }
             $pdo->commit();
@@ -346,7 +346,7 @@ function mk_declare_due(): void
 {
     $today = mk_today();
     foreach (q('SELECT * FROM mk_markets')->fetchAll() as $m) {
-        $days = q('SELECT DISTINCT day FROM mk_bets WHERE market_id = ? AND status = "open"', [$m['id']])->fetchAll(PDO::FETCH_COLUMN);
+        $days = q("SELECT DISTINCT day FROM mk_bets WHERE market_id = ? AND status = 'open'", [$m['id']])->fetchAll(PDO::FETCH_COLUMN);
         if ($m['is_active'] && mk_runs_on($m, $today)) $days[] = $today;
         foreach (array_unique($days) as $d) {
             try { mk_declare($m, (string)$d); } catch (Throwable $ex) { error_log('mk_declare: ' . $ex->getMessage()); }
