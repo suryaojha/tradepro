@@ -12,13 +12,13 @@ $err = '';
 $state = ['mysql' => false, 'db' => false, 'version' => 0, 'admins' => 0];
 
 try {
-    $root = new PDO('mysql:host=' . DB_HOST . ';charset=utf8mb4', DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $root = new PDO('mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';charset=utf8mb4', DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
     $state['mysql'] = true;
     $has = $root->prepare('SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?');
     $has->execute([DB_NAME]);
     $state['db'] = (bool)$has->fetchColumn();
     if ($state['db']) {
-        $pdo = new PDO('mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $pdo = new PDO('mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
         $state['version'] = schema_installed_version($pdo);
         if (sch_has_table($pdo, 'admins')) $state['admins'] = (int)$pdo->query('SELECT COUNT(*) FROM admins')->fetchColumn();
     }
