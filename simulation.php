@@ -2,6 +2,28 @@
 require_once __DIR__ . '/includes/bootstrap.php';
 $u = user_page_start('Period Simulator', 'games.php');
 $uid = (int)$u['id'];
+// Publish due classroom fixtures once, then settle virtual entries exactly once.
+$due = q('SELECT * FROM sim_periods WHERE status="scheduled" AND scheduled_at<=UTC_TIMESTAMP() AND result IS NOT NULL ORDER BY id LIMIT 100')->fetchAll();
+foreach ($due as $fixture) {
+    db()->beginTransaction();
+    try {
+        $locked = q('SELECT * FROM sim_periods WHERE id=? AND status="scheduled" FOR UPDATE', [(int)$fixture['id']])->fetch();
+        if ($locked) {
+            q('UPDATE sim_periods SET status="published",published_at=UTC_TIMESTAMP() WHERE id=?', [(int)$locked['id']]);
+            $entries = q('SELECT * FROM sim_entries WHERE period_id=? AND status="pending" FOR UPDATE', [(int)$locked['id']])->fetchAll();
+            foreach ($entries as $entry) {
+                if ($entry['direction'] === $locked['result']) {
+                    $payout = round((float)$entry['amount'] * 1.8, 4);
+                    q('UPDATE sim_entries SET status="won" WHERE id=?', [(int)$entry['id']]);
+                    q('UPDATE sim_wallets SET balance=balance+? WHERE user_id=? AND currency=?', [$payout,(int)$entry['user_id'],$entry['currency']]);
+                } else {
+                    q('UPDATE sim_entries SET status="lost" WHERE id=?', [(int)$entry['id']]);
+                }
+            }
+        }
+        db()->commit();
+    } catch (Throwable $e) { if(db()->inTransaction()) db()->rollBack(); error_log('simulation settlement: '.$e->getMessage()); }
+}
 foreach (['INR','USDT'] as $cur) q('INSERT IGNORE INTO sim_wallets (user_id,currency,balance) VALUES (?,?,?)', [$uid,$cur,1000]);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_require();
@@ -15,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$w || (float)$w['balance']<$amount) throw new RuntimeException('Insufficient virtual balance.');
         q('UPDATE sim_wallets SET balance=balance-? WHERE user_id=? AND currency=?',[$amount,$uid,$currency]);
         q('INSERT INTO sim_entries (user_id,period_id,currency,direction,amount) VALUES (?,?,?,?,?)',[$uid,$periodId,$currency,$direction,$amount]);
-        db()->commit(); flash('ok','Simulation entry recorded. No money was paid or received.');
+        db()->commit(); flash('ok','Simulation entry recorded. No money was paid or received. Virtual winning entries return 1.8× their virtual stake after the fixture time.');
     } catch(Throwable $e) { if(db()->inTransaction()) db()->rollBack(); flash('err',$e instanceof RuntimeException?$e->getMessage():'Could not save entry.'); }
     redirect('simulation.php');
 }
