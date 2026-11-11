@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $u = user_page_start('Profile', 'profile.php');
-$stats = q('SELECT COUNT(*) n, COALESCE(SUM(status="won"),0) w, COALESCE(SUM(status="lost"),0) l FROM trades WHERE user_id = ? AND status <> "open"', [$u['id']])->fetch();
+$stats = q("SELECT COUNT(*) n, COALESCE(SUM(status='won'),0) w, COALESCE(SUM(status='lost'),0) l FROM trades WHERE user_id = ? AND status <> 'open'", [$u['id']])->fetch();
 $rate = (int)$stats['n'] ? round(100 * $stats['w'] / max(1, $stats['w'] + $stats['l'])) : 0;
 ?>
 <h1>Profile</h1>
