@@ -5,71 +5,119 @@ require_once __DIR__ . '/includes/bigbang.php';
 $u = user_page_start('BigBang Demo Games', 'games.php');
 games_gate($u, 'games.php');
 play_nav('hub');
-if (!games_on()) {
-    echo '<div class="card"><h1>Games are currently unavailable</h1></div>';
-    user_page_end(); exit;
-}
+
 $keyReady = bigbang_key() !== '';
 $games = [];
 $error = '';
 $launchUrl = '';
 $launchTitle = '';
+$providerFilter = trim((string)($_GET['provider'] ?? ''));
+$search = trim((string)($_GET['q'] ?? ''));
 
 try {
-    if (!$keyReady) throw new RuntimeException('The administrator has not configured the BigBang sandbox key yet.');
+    if (!$keyReady) {
+        throw new RuntimeException('BigBang sandbox key is not configured. Ask the administrator to save the ek_test_ key.');
+    }
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         csrf_require();
-        $gameId = (int)($_POST['game_id'] ?? 0);
-        if ($gameId < 1) throw new RuntimeException('Choose a valid game.');
-        $catalog = bigbang_request('GET', '/games?type=standard&limit=500');
+        $gameId = filter_input(INPUT_POST, 'game_id', FILTER_VALIDATE_INT);
+        if (!$gameId || $gameId < 1) throw new RuntimeException('Choose a valid game.');
+
+        $catalog = bigbang_request('GET', '/games?type=standard&limit=5000');
+        $catalogRows = $catalog['data'] ?? [];
+        if (!is_array($catalogRows)) throw new RuntimeException('BigBang returned an unexpected game catalog format.');
         $selected = null;
-        foreach (($catalog['data'] ?? []) as $g) if ((int)($g['id'] ?? 0) === $gameId) { $selected = $g; break; }
-        if (!$selected || ($selected['tier'] ?? 'standard') !== 'standard' || ($selected['mode'] ?? 'standard') === 'premium') {
-            throw new RuntimeException('This game is not available in sandbox mode.');
+        foreach ($catalogRows as $g) {
+            if ((int)($g['id'] ?? 0) === (int)$gameId) { $selected = $g; break; }
         }
-        $launched = bigbang_request('POST', '/games/launch', ['game_id' => $gameId, 'demo' => true, 'language' => 'en', 'return_url' => abs_url('bigbang.php')]);
+        if (!$selected || ($selected['tier'] ?? 'standard') !== 'standard' || ($selected['mode'] ?? 'standard') === 'premium' || !empty($selected['is_premium'])) {
+            throw new RuntimeException('This title is not available through the free sandbox key.');
+        }
+
+        $launched = bigbang_request('POST', '/games/launch', [
+            'game_id' => (int)$gameId,
+            'demo' => true,
+            'language' => 'en',
+            'return_url' => abs_url('bigbang.php')
+        ]);
         $candidate = (string)($launched['game_url'] ?? '');
-        $host = strtolower((string)parse_url($candidate, PHP_URL_HOST));
-        if (!filter_var($candidate, FILTER_VALIDATE_URL) || !in_array($host, ['bigbangcasino.bet', 'www.bigbangcasino.bet'], true)) {
-            throw new RuntimeException('Provider returned an invalid game URL.');
+        $parts = parse_url($candidate);
+        $host = strtolower((string)($parts['host'] ?? ''));
+        if (!filter_var($candidate, FILTER_VALIDATE_URL) || strtolower((string)($parts['scheme'] ?? '')) !== 'https'
+            || !in_array($host, ['bigbangcasino.bet', 'www.bigbangcasino.bet'], true)) {
+            throw new RuntimeException('BigBang did not return a valid sandbox game URL.');
         }
         $launchUrl = $candidate;
         $launchTitle = (string)($selected['title'] ?? $selected['name'] ?? 'Demo game');
     } else {
-        $catalog = bigbang_request('GET', '/games?type=standard&limit=100');
-        $games = array_values(array_filter($catalog['data'] ?? [], fn($g) => ($g['tier'] ?? 'standard') === 'standard' && ($g['mode'] ?? 'standard') !== 'premium'));
+        $params = ['type' => 'standard', 'limit' => 5000];
+        if ($providerFilter !== '') $params['provider'] = $providerFilter;
+        if ($search !== '') $params['search'] = $search;
+        $query = http_build_query($params);
+        $catalog = bigbang_request('GET', '/games?' . $query);
+        $rows = $catalog['data'] ?? [];
+        if (!is_array($rows)) throw new RuntimeException('BigBang returned an unexpected game catalog format.');
+        $games = array_values(array_filter($rows, static function ($g) {
+            return is_array($g)
+                && (int)($g['id'] ?? 0) > 0
+                && ($g['tier'] ?? 'standard') === 'standard'
+                && ($g['mode'] ?? 'standard') !== 'premium'
+                && empty($g['is_premium']);
+        }));
     }
 } catch (Throwable $ex) {
+    error_log('BigBang lobby: ' . $ex->getMessage());
     $error = $ex->getMessage();
 }
+
 ?>
+<style>
+.bb-wrap{margin:18px 0 36px}.bb-tools{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.bb-tools input,.bb-tools select{min-width:180px;flex:1}.bb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}.bb-game{min-width:0}.bb-game img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:10px;background:#101522}.bb-game h2{font-size:17px;margin:12px 0 5px}.bb-game p{margin:0 0 12px}.bb-game form{margin-top:auto}.bb-frame{width:100%;height:min(78vh,820px);min-height:460px;border:0;border-radius:12px;background:#080b12}.bb-empty{padding:28px;text-align:center}.bb-count{font-size:13px;color:var(--muted)}
+@media(max-width:600px){.bb-frame{min-height:360px;height:70vh}.bb-tools>*{width:100%}}
+</style>
 <div class="gamehead">
-  <div><h1 style="margin:0">BigBang Demo Games</h1><div class="muted" style="font-size:13px">Sandbox games · Virtual balance · No cash value</div></div>
+  <div><h1 style="margin:0">BigBang Demo Games</h1><div class="muted" style="font-size:13px">Free sandbox · Standard games · BigBang virtual balance</div></div>
   <a class="btn ghost sm" href="<?= e(url('games.php')) ?>">Back to games</a>
 </div>
-<?php if ($error): ?><div class="flash <?= $keyReady ? 'err' : 'info' ?>"><?= e($error) ?></div><?php endif; ?>
-<?php if ($launchUrl): ?>
+<div class="bb-wrap">
+<?php if ($error): ?>
+  <div class="flash err"><b>BigBang could not load.</b><br><?= e($error) ?></div>
+  <div class="card"><p class="muted">Check that the sandbox key is active and has <code>can_read_games</code> permission. Game launching also requires <code>can_launch_games</code>.</p><a class="btn ghost sm" href="<?= e(url('bigbang.php')) ?>">Try again</a></div>
+<?php elseif ($launchUrl): ?>
   <div class="card">
-    <div class="inline" style="justify-content:space-between"><h2><?= e($launchTitle) ?></h2><a class="btn ghost sm" href="<?= e(url('bigbang.php')) ?>">Back to lobby</a></div>
-    <div style="position:relative;width:100%;height:min(78vh,760px);min-height:420px;background:#080b12;border-radius:14px;overflow:hidden">
-      <iframe src="<?= e($launchUrl) ?>" title="<?= e($launchTitle) ?>" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" style="width:100%;height:100%;border:0"></iframe>
-    </div>
-    <p class="muted" style="font-size:12px">Provider-hosted sandbox session. TradePro INR/USDT balances are not used.</p>
+    <div class="inline" style="justify-content:space-between;gap:12px"><h2><?= e($launchTitle) ?></h2><a class="btn ghost sm" href="<?= e(url('bigbang.php')) ?>">Back to lobby</a></div>
+    <iframe class="bb-frame" src="<?= e($launchUrl) ?>" title="<?= e($launchTitle) ?>" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    <p class="muted" style="font-size:12px;margin-bottom:0">This session uses BigBang's free sandbox virtual balance. TradePro Demo coins are not deducted.</p>
   </div>
-<?php elseif ($games): ?>
-  <div class="grid g3 hubgrid">
+<?php else: ?>
+  <form class="bb-tools" method="get">
+    <input type="search" name="q" value="<?= e($search) ?>" placeholder="Search games">
+    <input type="text" name="provider" value="<?= e($providerFilter) ?>" placeholder="Provider (optional)">
+    <button class="btn" type="submit">Search</button>
+    <?php if ($search !== '' || $providerFilter !== ''): ?><a class="btn ghost" href="<?= e(url('bigbang.php')) ?>">Clear</a><?php endif; ?>
+  </form>
+  <div class="bb-count"><?= count($games) ?> sandbox games available</div>
+  <?php if ($games): ?>
+    <div class="bb-grid" style="margin-top:14px">
     <?php foreach ($games as $g): ?>
-      <div class="hubcard">
-        <?php if (!empty($g['thumbnail']) && preg_match('#^https://#i', (string)$g['thumbnail'])): ?>
-          <img src="<?= e($g['thumbnail']) ?>" alt="" loading="lazy" style="width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:10px">
+      <article class="hubcard bb-game">
+        <?php
+          $thumb = (string)($g['thumbnail'] ?? '');
+          $thumbHost = strtolower((string)parse_url($thumb, PHP_URL_HOST));
+          if (filter_var($thumb, FILTER_VALIDATE_URL) && strtolower((string)parse_url($thumb, PHP_URL_SCHEME)) === 'https' && $thumbHost !== ''):
+        ?>
+          <img src="<?= e($thumb) ?>" alt="" loading="lazy">
         <?php else: ?><div class="hubic">🎮</div><?php endif; ?>
         <h2><?= e($g['title'] ?? $g['name'] ?? 'Game') ?></h2>
-        <p><?= e($g['provider'] ?? 'Standard provider') ?> · <?= e($g['game_type'] ?? 'game') ?></p>
+        <p class="muted"><?= e($g['provider'] ?? $g['category_title'] ?? 'Standard provider') ?> · <?= e($g['game_type'] ?? 'Game') ?></p>
         <form method="post"><?= csrf_field() ?><input type="hidden" name="game_id" value="<?= (int)$g['id'] ?>"><button class="btn sm" type="submit">Play demo →</button></form>
-      </div>
+      </article>
     <?php endforeach; ?>
-  </div>
-<?php elseif (!$error): ?>
-  <div class="card"><h2>No standard games returned</h2><p class="muted">Check the sandbox key's provider permissions in the BigBang portal.</p></div>
+    </div>
+  <?php else: ?>
+    <div class="card bb-empty"><h2>No sandbox games returned</h2><p class="muted">The key may have no Standard providers enabled, or the provider filter returned no matches. Check provider access in the BigBang dashboard.</p></div>
+  <?php endif; ?>
 <?php endif; ?>
+</div>
 <?php user_page_end(); ?>
