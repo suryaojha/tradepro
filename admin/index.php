@@ -9,21 +9,21 @@ $users    = (int)q('SELECT COUNT(*) FROM users')->fetchColumn();
 $newToday = (int)q('SELECT COUNT(*) FROM users WHERE created_at >= ?', [gmdate('Y-m-d H:i:s', (new DateTime('today', new DateTimeZone(display_tz())))->getTimestamp())])->fetchColumn();
 $new7     = (int)q('SELECT COUNT(*) FROM users WHERE created_at >= (UTC_TIMESTAMP() - INTERVAL 7 DAY)')->fetchColumn();
 $active24 = (int)q('SELECT COUNT(DISTINCT user_id) FROM trades WHERE open_ts >= ?', [time() - 86400])->fetchColumn();
-$openT    = (int)q('SELECT COUNT(*) FROM trades WHERE status = 'open'')->fetchColumn();
-$pending  = (int)q('SELECT COUNT(*) FROM payment_requests WHERE status = 'pending'')->fetchColumn();
-$blocked  = (int)q('SELECT COUNT(*) FROM users WHERE status = 'blocked'')->fetchColumn();
+$openT    = (int)q("SELECT COUNT(*) FROM trades WHERE status = 'open'")->fetchColumn();
+$pending  = (int)q("SELECT COUNT(*) FROM payment_requests WHERE status = 'pending'")->fetchColumn();
+$blocked  = (int)q("SELECT COUNT(*) FROM users WHERE status = 'blocked'")->fetchColumn();
 
 $byAcc = [];
-foreach (q('SELECT account_type a, COUNT(*) n, SUM(amount) vol, SUM(-profit) house,
+foreach (q("SELECT account_type a, COUNT(*) n, SUM(amount) vol, SUM(-profit) house,
                    SUM(status = 'won') w, SUM(status = 'lost') l
-            FROM trades WHERE status <> 'open' GROUP BY account_type')->fetchAll() as $r) $byAcc[$r['a']] = $r;
+            FROM trades WHERE status <> 'open' GROUP BY account_type")->fetchAll() as $r) $byAcc[$r['a']] = $r;
 $byAcc24 = [];
-foreach (q('SELECT account_type a, SUM(amount) vol, SUM(-profit) house
-            FROM trades WHERE status <> 'open' AND settled_at >= (UTC_TIMESTAMP() - INTERVAL 1 DAY) GROUP BY account_type')->fetchAll() as $r) $byAcc24[$r['a']] = $r;
+foreach (q("SELECT account_type a, SUM(amount) vol, SUM(-profit) house
+            FROM trades WHERE status <> 'open' AND settled_at >= (UTC_TIMESTAMP() - INTERVAL 1 DAY) GROUP BY account_type")->fetchAll() as $r) $byAcc24[$r['a']] = $r;
 $liab = [];
 foreach (q('SELECT type, SUM(balance) s FROM wallets GROUP BY type')->fetchAll() as $r) $liab[$r['type']] = (float)$r['s'];
 $flow = [];
-foreach (q('SELECT type, account_type a, SUM(amount) s FROM payment_requests WHERE status = 'approved' GROUP BY type, account_type')->fetchAll() as $r) $flow[$r['type']][$r['a']] = (float)$r['s'];
+foreach (q("SELECT type, account_type a, SUM(amount) s FROM payment_requests WHERE status = 'approved' GROUP BY type, account_type")->fetchAll() as $r) $flow[$r['type']][$r['a']] = (float)$r['s'];
 
 $recent = q('SELECT t.*, a.symbol, u.email FROM trades t JOIN assets a ON a.id = t.asset_id JOIN users u ON u.id = t.user_id ORDER BY t.id DESC LIMIT 10')->fetchAll();
 $logs = q('SELECT l.*, a.name, a.email FROM admin_logs l LEFT JOIN admins a ON a.id = l.admin_id ORDER BY l.id DESC LIMIT 8')->fetchAll();
