@@ -38,7 +38,7 @@ if ($run && $allowed && !$err) {
     try {
         $dbn = '`' . str_replace('`', '``', DB_NAME) . '`';
         $root->exec("CREATE DATABASE IF NOT EXISTS $dbn CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-        $pdo = new PDO('mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $pdo = new PDO('mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
         $out = schema_install($pdo);
         if (!$cli) {
             $url = (IS_HTTPS ? 'https://' : 'http://') . preg_replace('/[^A-Za-z0-9.\-:\[\]]/', '', $_SERVER['HTTP_HOST'] ?? 'localhost') . BASE_URL;
