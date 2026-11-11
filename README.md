@@ -99,3 +99,12 @@ Responsive layouts: bottom tab bar for users, slide-in menu for admin, tables be
 * Binary-options style products are restricted or banned in many countries. Check the law and licensing where you operate.
   Yahoo/Binance quotes are unofficial/delayed public data – disclose that to users and check their terms for commercial use.
 * Add KYC and a payment gateway before handling real money.
+
+
+## BigBang sandbox games (feature branch)
+The optional BigBang integration is available at `/bigbang.php` and in Admin → BigBang Sandbox.
+1. Run `/install.php` once after deploying this branch; schema version 12 adds the encrypted-key setting.
+2. Sign in as admin, open **BigBang Sandbox**, enter a newly generated **sandbox** key beginning `ek_test_`, save it, then use **Test API connection**.
+3. Users enter the games area using the existing games PIN gate and launch Standard-tier games in provider demo mode.
+
+The key is encrypted server-side using the existing storage key. It is never sent to the browser or committed to Git. This integration deliberately does not implement BigBang wallet callbacks, player balance changes, deposits, withdrawals, Premium, Enterprise or Sports games. Rotate any API key that was previously pasted into a chat or committed to a public repository.
