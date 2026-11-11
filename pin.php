@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $err = pin_check((int)$u['id'], (string)($_POST['pin'] ?? '')) ?? '';
         if ($err === '') {
             $_SESSION['pin_ok'] = 1;
+            $_SESSION['games_ok'] = 'login';
             redirect('trade.php');
         }
     }
