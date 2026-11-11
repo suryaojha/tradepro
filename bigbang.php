@@ -4,7 +4,6 @@ require_once __DIR__ . '/includes/bigbang.php';
 
 $u = user_page_start('BigBang Demo Games', 'games.php');
 games_gate($u, 'games.php');
-play_nav('hub');
 
 $keyReady = bigbang_key() !== '';
 $games = [];
@@ -86,10 +85,13 @@ try {
   <div class="card"><p class="muted">Check that the sandbox key is active and has <code>can_read_games</code> permission. Game launching also requires <code>can_launch_games</code>.</p><a class="btn ghost sm" href="<?= e(url('bigbang.php')) ?>">Try again</a></div>
 <?php elseif ($launchUrl): ?>
   <div class="card">
-    <div class="inline" style="justify-content:space-between;gap:12px"><h2><?= e($launchTitle) ?></h2><a class="btn ghost sm" href="<?= e(url('bigbang.php')) ?>">Back to lobby</a></div>
+    <div class="inline" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><h2><?= e($launchTitle) ?></h2><div class="inline"><button class="btn sm" type="button" id="bbFullscreen">⛶ Full screen</button><a class="btn ghost sm" href="<?= e(url('bigbang.php')) ?>">Back to lobby</a></div></div>
     <iframe class="bb-frame" src="<?= e($launchUrl) ?>" title="<?= e($launchTitle) ?>" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
     <p class="muted" style="font-size:12px;margin-bottom:0">This session uses BigBang's free sandbox virtual balance. TradePro Demo coins are not deducted.</p>
   </div>
+  <script>
+  (function(){var b=document.getElementById('bbFullscreen'),f=document.querySelector('.bb-frame');if(!b||!f)return;b.addEventListener('click',function(){var el=f;if(el.requestFullscreen)el.requestFullscreen();else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();else if(f.contentWindow&&f.contentWindow.document&&f.contentWindow.document.documentElement.requestFullscreen)f.contentWindow.document.documentElement.requestFullscreen();});})();
+  </script>
 <?php else: ?>
   <form class="bb-tools" method="get">
     <input type="search" name="q" value="<?= e($search) ?>" placeholder="Search games">
