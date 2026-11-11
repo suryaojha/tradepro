@@ -629,3 +629,33 @@ body .select2-container--default.select2-container--open .select2-selection--sin
 .playbar .playsafe{margin-left:auto;flex:none;white-space:nowrap}
 @media(max-width:700px){.playbar .playsafe{display:none}}
 .spinner.sm{width:14px;height:14px;border-width:2px;vertical-align:middle;margin-left:8px}
+
+
+/* ---------- BigBang and auth mobile refinements ---------- */
+.bb-wrap{min-width:0}
+.bb-tools{display:flex;gap:10px;flex-wrap:wrap}
+.bb-tools input,.bb-tools select{min-width:0;flex:1 1 180px}
+.bb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr));gap:14px}
+.bb-game{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.bb-game img{width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;border-radius:10px}
+.bb-game form{margin-top:auto}
+.bb-frame{display:block;width:100%;max-width:100%;height:min(78vh,820px);min-height:440px;border:0;border-radius:12px}
+.captcha-field{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.captcha-field input{max-width:180px}
+.pwtoggle{min-height:36px}
+@media(max-width:600px){
+  .container{padding:16px 12px}
+  .card{padding:14px}
+  .authwrap{padding:12px;align-items:flex-start;padding-top:7vh}
+  .authbox{padding:22px 18px}
+  .bb-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .bb-game{padding:10px}
+  .bb-game h2{font-size:15px}
+  .bb-game p{font-size:12px}
+  .bb-game .btn{width:100%;white-space:normal}
+  .bb-tools>*{width:100%;flex:1 1 100%}
+  .bb-frame{height:70dvh;min-height:340px}
+}
+@media(max-width:360px){
+  .bb-grid{grid-template-columns:minmax(0,1fr)}
+}
