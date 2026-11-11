@@ -3,7 +3,7 @@
  * Database schema, defaults and upgrades. Idempotent: safe to run any number of times.
  * Used by install.php (and automatically requested by bootstrap when the version is old).
  */
-const SCHEMA_VERSION = 11;
+const SCHEMA_VERSION = 12;
 
 /** TradingView symbols for the starter markets (admin can change them per market). */
 function default_tv_symbols(): array
@@ -52,6 +52,7 @@ function default_settings(): array
         'withdraw_fee_usdt'   => '1',
         // entertainment games (play with the Demo wallet only - virtual coins, no cash value)
         'games_enabled'       => '1',
+        'bigbang_api_key_enc' => '', // encrypted BigBang sandbox API key; configured in Admin > BigBang Sandbox
         'games_pin_required'  => '1',      // 6-digit PIN needed to enter the games section
         'cg_enabled'          => '1',
         'cg_modes'            => '30,60,180,300',   // round lengths in seconds
