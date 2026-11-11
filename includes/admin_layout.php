@@ -2,13 +2,13 @@
 function admin_start(string $title, string $active): array
 {
     $a = require_admin();
-    $pending = (int)q('SELECT COUNT(*) FROM payment_requests WHERE status = 'pending'')->fetchColumn();
+    $pending = (int)q("SELECT COUNT(*) FROM payment_requests WHERE status = 'pending'")->fetchColumn();
     $items = [
         'index.php'    => ['Dashboard', 'dashboard', 0],
         'assets.php'   => ['Markets & Payout', 'assets', 0],
         'requests.php' => ['Deposits / Withdrawals', 'inbox', $pending],
         'users.php'    => ['Users', 'users', 0],
-        'kyc.php'      => ['KYC (PAN / Aadhaar)', 'shield', (int)q('SELECT COUNT(*) FROM kyc WHERE status = 'pending'')->fetchColumn()],
+        'kyc.php'      => ['KYC (PAN / Aadhaar)', 'shield', (int)q("SELECT COUNT(*) FROM kyc WHERE status = 'pending'")->fetchColumn()],
         'trades.php'   => ['Trades', 'list', 0],
         'games.php'    => ['Games', 'games', 0],
         'bigbang.php'   => ['BigBang Sandbox', 'gamepad', 0],
