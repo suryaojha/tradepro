@@ -3,6 +3,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 require_once __DIR__ . '/includes/bigbang.php';
 
 $u = user_page_start('BigBang Demo Games', 'games.php');
+games_gate($u, 'games.php');
 play_nav('hub');
 if (!games_on()) {
     echo '<div class="card"><h1>Games are currently unavailable</h1></div>';
