@@ -87,9 +87,9 @@ user_topbar($u, 'cricket.php');
       </div>
     </section>
     <p class="muted" style="margin-top:14px">Match information provided by CricketData.org. Times are shown in Indian Standard Time (IST). Scores appear only when supplied by the API.</p>
-  <?php else: ?><p class="muted">No match details were returned.</p><?php endif; ?>
-    </div>
   <?php else: ?>
+    <div class="card"><p class="muted">No match details were returned.</p></div>
+  <?php endif; ?>
     <div class="card" style="margin-bottom:16px"><b><?= count($matches) ?></b> matches returned <span class="muted">· Shared cache: 15 minutes</span></div>
     <?php if (!$matches): ?><div class="card"><h3>No matches found</h3><p class="muted">CricketData did not return any current or upcoming matches.</p></div><?php endif; ?>
     <div class="grid g2">
