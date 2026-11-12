@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
 
-if (current_user()) redirect('index.php');
+if (current_user()) redirect('trade.php');
 
 $err = '';
 $f = ['name' => '', 'email' => '', 'phone' => ''];
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_regenerate_id(true);
             $_SESSION['uid'] = $uid;
             flash('ok', 'Welcome! Your demo account is funded and ready.');
-            redirect('index.php');
+            redirect('trade.php');
         } catch (Throwable $ex) {
             error_log('register: ' . $ex->getMessage());
             $err = 'Could not create the account. Please try again.';
