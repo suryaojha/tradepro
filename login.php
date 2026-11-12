@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
 
-if (current_user()) redirect('index.php');
+if (current_user()) redirect('trade.php');
 
 $err = '';
 $info = '';
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 setcookie('theme', $u['theme'], ['expires' => time() + 31536000, 'path' => '/', 'secure' => FORCE_HTTPS_COOKIES, 'samesite' => 'Lax']);
             }
             q('UPDATE users SET last_login = NOW() WHERE id = ?', [$u['id']]);
-            redirect('index.php');
+            redirect('trade.php');
         }
     }
 }
