@@ -9,17 +9,11 @@ $markets = games_on() && mk_on() ? q('SELECT * FROM mk_markets WHERE is_active =
 $pin = pin_is_set($u);
 ?>
 <div class="gamehead">
-  <div><h1 style="margin:0">Play</h1><div class="muted" style="font-size:13px">Three ways to play – one wallet</div></div>
+  <div><h1 style="margin:0">Play</h1><div class="muted" style="font-size:13px">Demo games</div></div>
   <div class="gamewallet"><small>Demo coins</small><b><?= e(money($demo, 'demo')) ?></b></div>
 </div>
 
 <div class="grid g3 hubgrid">
-  <a class="hubcard h1" href="<?= e(url('trade.php')) ?>">
-    <span class="hubic">📈</span><h2>Trading</h2>
-    <p>Predict UP or DOWN on live forex, crypto, gold and stocks with TradingView charts.</p>
-    <span class="hubtag">Real prices · Demo / INR / USDT</span>
-    <span class="btn green sm">Open terminal →</span>
-  </a>
   <a class="hubcard h2" href="<?= e(url('colorgame.php')) ?>">
     <span class="hubic">🎨</span><h2>Colour Game</h2>
     <p>Pick Green, Violet or Red – or a number 0-9 – before each period ends.</p>
