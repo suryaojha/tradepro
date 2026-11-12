@@ -138,6 +138,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($values as $k => $v) set_setting($k, $v);
             admin_log('settings_save');
             flash('ok', 'Settings saved.');
+        } elseif ($action === 'bigbang_key') {
+            $key = trim((string)($_POST['bigbang_api_key'] ?? ''));
+            if (!empty($_POST['bigbang_key_clear'])) {
+                set_setting('bigbang_api_key_enc', '');
+                admin_log('bigbang_api_key_clear');
+                flash('ok', 'BigBang sandbox API key removed.');
+            } elseif ($key !== '') {
+                if (!preg_match('/^ek_test_[A-Za-z0-9_-]{8,200}$/', $key)) {
+                    throw new RuntimeException('Enter a valid sandbox key beginning with ek_test_.');
+                }
+                set_setting('bigbang_api_key_enc', secret_encrypt($key));
+                admin_log('bigbang_api_key_save');
+                flash('ok', 'BigBang sandbox API key saved securely.');
+            } else {
+                throw new RuntimeException('Paste the sandbox API key, or select Remove saved key.');
+            }
         } elseif ($action === 'smtp_save' || $action === 'smtp_test') {
             save_smtp_from_post();
             admin_log('smtp_save', setting('smtp_host', ''));
@@ -231,6 +247,17 @@ $cronUrl = abs_url('cron.php?key=' . setting('cron_key', ''));
   <?php endforeach; ?>
   <button class="btn green" type="submit">Save settings</button>
 </form>
+
+<div class="card" id="bigbang" style="margin-top:28px">
+  <h2>BigBang Casino sandbox API</h2>
+  <p class="muted" style="margin-top:-6px">Save your <code>ek_test_</code> sandbox key here. It is encrypted in the settings database and never displayed again. Only Standard sandbox games are used; no TradePro wallet integration is enabled.</p>
+  <p><span class="badge <?= setting('bigbang_api_key_enc', '') !== '' ? 'ok' : 'pending' ?>"><?= setting('bigbang_api_key_enc', '') !== '' ? 'key saved' : 'key not configured' ?></span></p>
+  <form method="post"><?= csrf_field() ?><input type="hidden" name="action" value="bigbang_key">
+    <div class="field"><label>BigBang sandbox API key</label><div class="pwbox"><input type="password" name="bigbang_api_key" autocomplete="new-password" placeholder="ek_test_... (leave blank to keep saved key)"><button type="button" class="pwtoggle" data-pwtoggle tabindex="-1">Show</button></div></div>
+    <label class="check" style="margin:10px 0"><input type="checkbox" name="bigbang_key_clear" value="1"> <span>Remove saved key</span></label>
+    <button class="btn green" type="submit">Save BigBang key</button>
+  </form>
+</div>
 
 <div class="card" id="smtp" style="margin-top:28px">
   <h2>Email (SMTP) <span class="badge <?= mail_ready() ? 'ok' : 'pending' ?>"><?= mail_ready() ? 'enabled' : 'not active' ?></span></h2>
