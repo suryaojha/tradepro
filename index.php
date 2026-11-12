@@ -1,107 +1,199 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
-require_once __DIR__ . '/includes/bigbang.php';
 
-$u = current_user();
-$siteName = (string)setting('site_name', 'TradePro');
-$bbGames = [];
-$bbProviders = [];
-$bbError = '';
-if (bigbang_key() !== '') {
-    try {
-        $catalog = bigbang_request('GET', '/games?type=standard&limit=12&offset=0');
-        $rows = $catalog['data'] ?? [];
-        if (is_array($rows)) {
-            foreach ($rows as $g) {
-                if (!is_array($g) || (int)($g['id'] ?? 0) < 1 || ($g['tier'] ?? 'standard') !== 'standard' || ($g['mode'] ?? 'standard') === 'premium' || !empty($g['is_premium'])) continue;
-                $bbGames[] = $g;
-                $provider = trim((string)($g['provider'] ?? ''));
-                if ($provider !== '' && !in_array($provider, $bbProviders, true)) $bbProviders[] = $provider;
-            }
-        }
-    } catch (Throwable $ex) {
-        error_log('Homepage BigBang catalog: ' . $ex->getMessage());
-        $bbError = 'Demo catalogue is temporarily unavailable.';
+if (current_user()) {
+    redirect('trade.php');
+}
+$assets = active_assets();
+$quotes = quotes_get();
+$name = (string)setting('site_name', 'TradePro');
+$payout = rtrim(rtrim(number_format((float)setting('payout_percent', 85), 2), '0'), '.');
+$durs = durations();
+$cats = array_values(array_unique(array_column($assets, 'category')));
+$minInr = (float)setting('min_trade_inr', 0);
+$hero = array_slice(array_filter($assets, fn($a) => isset($quotes[(int)$a['id']])), 0, 3);
+$fmtp = fn($a, $q) => $q ? number_format($q['price'], (int)$a['decimals']) : '—';
+// real, current results for the game cards (nothing invented)
+$cgLast = cg_on() ? q('SELECT result FROM cg_rounds WHERE secs = ? AND settled_at IS NOT NULL ORDER BY start_ts DESC LIMIT 8', [cg_modes()[0]])->fetchAll(PDO::FETCH_COLUMN) : [];
+$mkToday = [];
+if (mk_on()) {
+    foreach (q('SELECT * FROM mk_markets WHERE is_active = 1 ORDER BY sort_order, id LIMIT 2')->fetchAll() as $m) {
+        $mkToday[] = ['name' => $m['name'], 'r' => q('SELECT * FROM mk_results WHERE market_id = ? AND day = ?', [$m['id'], mk_today()])->fetch() ?: null];
     }
 }
-page_head('Home', 'matchpari-home');
+page_head('Online Trading Platform', 'landing');
 ?>
-<style>
-.matchpari-home{background:#eef2f6;color:#101828}.matchpari-home .container{max-width:1320px}
-.mp-top{background:#875000;color:#fff;padding:12px max(14px,calc((100vw - 1320px)/2));display:flex;align-items:center;gap:18px;justify-content:space-between;flex-wrap:wrap}
-.mp-brand{display:flex;align-items:center;gap:10px;color:#ffdf38;font-weight:1000;font-size:clamp(20px,3vw,30px);text-decoration:none;text-shadow:1px 2px #164b66}
-.mp-brand img{width:34px;height:34px;object-fit:contain}.mp-account{display:flex;gap:14px;align-items:center;color:white;font-weight:700}.mp-account a{color:white}
-.mp-nav{background:#754300;color:#fff;display:flex;overflow-x:auto;white-space:nowrap;padding:0 max(10px,calc((100vw - 1320px)/2));border-top:1px solid #a96b17}
-.mp-nav a{color:#fff;text-decoration:none;font-weight:900;padding:15px 18px;border-right:1px solid #c28a38}.mp-nav a.active{background:#fff3c4;color:#7a3500}
-.mp-cats{display:grid;grid-template-columns:repeat(6,minmax(100px,1fr));background:#08645b;color:white;gap:1px}
-.mp-cats a{text-align:center;color:white;text-decoration:none;font-weight:900;padding:12px 4px;background:#087266}.mp-cats b{display:block;font-size:27px;margin-bottom:4px}
-.mp-shell{max-width:1320px;margin:0 auto;padding:12px}.mp-strip{display:flex;gap:8px;overflow:auto;padding:6px 0 12px}.mp-pill{border:1px solid #a16b19;border-radius:24px;padding:8px 16px;color:#865000;background:#fff;white-space:nowrap;font-weight:700}
-.mp-section{margin:10px 0 16px}.mp-heading{background:#08645b;color:white;padding:11px 14px;font-size:23px;font-weight:1000;text-transform:uppercase;margin:0 0 7px}
-.mp-sportsnote{background:white;border:1px solid #d8e0e8;padding:16px;color:#475467}
-.mp-gamegrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;background:#fff}
-.mp-game{position:relative;min-width:0;background:#15233a;color:white;overflow:hidden;aspect-ratio:1.42;text-decoration:none}
-.mp-game img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}.mp-game:hover img{transform:scale(1.04)}
-.mp-game .mp-game-label{position:absolute;inset:auto 0 0;padding:9px 7px;background:linear-gradient(transparent,rgba(0,0,0,.88));font-weight:900;text-align:center;text-transform:uppercase;font-size:clamp(11px,1.3vw,15px)}
-.mp-game.noimg{display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;background:linear-gradient(135deg,#142c55,#5d236f)}
-.mp-providergrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
-.mp-provider{min-height:110px;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;color:white;font-weight:1000;font-size:clamp(15px,2vw,24px);text-transform:uppercase;background:linear-gradient(135deg,#112a56,#702f68)}
-.mp-provider:nth-child(3n+2){background:linear-gradient(135deg,#0d314b,#116a6c)}.mp-provider:nth-child(3n){background:linear-gradient(135deg,#3b174d,#b05b19)}
-.mp-foot{background:#fff;padding:28px 12px;text-align:center;color:#475467;margin-top:24px}
-@media(max-width:680px){.mp-shell{padding:8px}.mp-cats{grid-template-columns:repeat(3,minmax(0,1fr))}.mp-gamegrid{grid-template-columns:repeat(2,minmax(0,1fr))}.mp-providergrid{grid-template-columns:repeat(2,minmax(0,1fr))}.mp-heading{font-size:20px}.mp-game{aspect-ratio:1.35}.mp-top{gap:8px}}
-</style>
-<header class="mp-top">
-  <a class="mp-brand" href="<?= e(url('')) ?>"><span>🎮</span><?= e($siteName) ?></a>
-  <div class="mp-account">
-    <?php if ($u): $mpWallets = wallets_of((int)$u['id']); ?>
-      <span><?= e(money($mpWallets[$u['active_account']], $u['active_account'])) ?></span>
-      <a href="<?= e(url('profile.php')) ?>"><?= e($u['name'] ?: $u['email']) ?> ▾</a>
-    <?php else: ?>
-      <a href="<?= e(url('login.php')) ?>">Log in</a><a href="<?= e(url('register.php')) ?>">Register</a>
-    <?php endif; ?>
+<header class="topbar lh">
+  <?= logo_html() ?>
+  <nav class="nav lnav">
+    <a href="#play">Play</a><a href="#markets">Markets</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#faq">FAQ</a>
+  </nav>
+  <div class="topright">
+    <?= tz_widget() ?>
+    <?= theme_toggle() ?>
+    <a class="btn ghost sm" href="<?= e(url('login.php')) ?>">Log in</a>
+    <a class="btn green sm" href="<?= e(url('register.php')) ?>">Sign up free</a>
   </div>
 </header>
-<nav class="mp-nav" aria-label="Main navigation">
-  <a class="active" href="#inplay">INPLAY</a><a href="#sports">SPORTS</a><a href="#casino">CASINO</a><a href="#providers">PROVIDERS</a><a href="#new-launch">NEW LAUNCH</a><a href="<?= e(url('games.php')) ?>">PLAY</a>
-</nav>
-<div class="mp-cats">
-  <a href="#sports"><b>🏏</b>CRICKET</a><a href="#sports"><b>⚽</b>FOOTBALL</a><a href="#sports"><b>🎾</b>TENNIS</a><a href="#sports"><b>🏆</b>FANTASY</a><a href="#sports"><b>🏁</b>MORE SPORTS</a><a href="#casino"><b>🎮</b>CASINO</a>
+
+<section class="lhero">
+  <div class="lhero-in">
+    <div class="lhero-text">
+      <span class="pillbadge"><span class="live"></span>Live prices · Binance &amp; Yahoo Finance · TradingView charts</span>
+      <h1>Predict the market.<br><span class="grad">Trade in seconds.</span></h1>
+      <p>Will the price go <b class="green">UP</b> or <b class="red">DOWN</b>? Make your prediction on forex, crypto, gold and stocks. Get it right and win up to <b><?= e($payout) ?>%</b> of your stake.</p>
+      <div class="cta">
+        <a class="btn green lg" href="<?= e(url('register.php')) ?>">Start with a free demo</a>
+        <a class="btn ghost lg" href="#how">See how it works</a>
+      </div>
+      <ul class="trustrow">
+        <li>✓ <?= e(money(setting('demo_balance', 0), 'demo')) ?> demo balance</li>
+        <li>✓ Expiry from <?= e(fmt_duration($durs[0])) ?></li>
+        <li>✓ Deposit via UPI / bank / USDT</li>
+      </ul>
+    </div>
+    <div class="lhero-card">
+      <div class="hc-head"><b>Live markets</b><span class="muted" style="font-size:12px"><span class="live"></span>updating</span></div>
+      <?php foreach ($hero as $a): $q = $quotes[(int)$a['id']]; ?>
+        <div class="hc-row">
+          <div><div class="sym"><?= e($a['symbol']) ?></div><div class="muted" style="font-size:12px"><?= e($a['name']) ?></div></div>
+          <div class="mono hc-px" data-px="<?= (int)$a['id'] ?>" data-dec="<?= (int)$a['decimals'] ?>"><?= e($fmtp($a, $q)) ?></div>
+          <div class="hc-btns"><span class="up">▲ UP</span><span class="dn">▼ DOWN</span></div>
+        </div>
+      <?php endforeach; ?>
+      <div class="hc-foot">Correct prediction pays <b class="green"><?= e($payout) ?>%</b> profit</div>
+    </div>
+  </div>
+</section>
+
+<div class="ticker lticker" id="ticker">
+  <?php foreach ($assets as $a): $q = $quotes[(int)$a['id']] ?? null; ?>
+    <div class="tk"><span class="muted"><?= e($a['symbol']) ?></span>
+      <b class="mono" data-px="<?= (int)$a['id'] ?>" data-dec="<?= (int)$a['decimals'] ?>"><?= e($fmtp($a, $q)) ?></b></div>
+  <?php endforeach; ?>
 </div>
-<main class="mp-shell">
-  <div class="mp-strip"><span class="mp-pill">• LIVE SCORES</span><span class="mp-pill">UPCOMING FIXTURES</span><span class="mp-pill">SANDBOX GAMES</span><span style="margin-left:auto;font-weight:800;color:#344054;align-self:center">DEMO EXPERIENCE</span></div>
-  <section class="mp-section" id="inplay">
-    <h2 class="mp-heading">IN PLAY · SPORTS CENTRE</h2>
-    <div class="mp-sportsnote"><b>Sports fixtures and scores</b><p style="margin:6px 0 0">Live sports data is not connected yet. This area will show verified team names, schedules and scores when an authorised sports-data feed is configured. No betting odds or bet slips are displayed.</p></div>
-  </section>
-  <section class="mp-section" id="sports">
-    <h2 class="mp-heading">SPORTS</h2>
-    <div class="mp-cats" style="grid-template-columns:repeat(6,minmax(0,1fr));border:2px solid white">
-      <a href="#sports"><b>🏏</b>Cricket</a><a href="#sports"><b>⚽</b>Football</a><a href="#sports"><b>🎾</b>Tennis</a><a href="#sports"><b>🏆</b>Fantasy</a><a href="#sports"><b>🏁</b>Motorsport</a><a href="#sports"><b>🏀</b>Other</a>
+
+<div class="container lwrap">
+  <div class="lstats">
+    <div><b><?= count($assets) ?>+</b><span>Live markets</span></div>
+    <div><b><?= e($payout) ?>%</b><span>Winning payout</span></div>
+    <div><b><?= e(fmt_duration($durs[0])) ?></b><span>Fastest expiry</span></div>
+    <div><b><?= e(money($minInr, 'inr')) ?></b><span>Minimum trade (INR)</span></div>
+  </div>
+
+  <section id="how" class="lsec">
+    <h2>How it works</h2>
+    <div class="grid g3 steps">
+      <div class="step"><i>1</i><h3>Pick a market</h3><p class="muted">Choose from <?= e(implode(', ', array_map('ucfirst', $cats))) ?> – with a live TradingView chart.</p></div>
+      <div class="step"><i>2</i><h3>Predict UP or DOWN</h3><p class="muted">Choose your stake and expiry (<?= e(implode(', ', array_map('fmt_duration', $durs))) ?>), then tap UP or DOWN.</p></div>
+      <div class="step"><i>3</i><h3>Win the payout</h3><p class="muted">At expiry the live price decides. Right prediction: you win <?= e($payout) ?>% on top of your stake.</p></div>
     </div>
   </section>
-  <section class="mp-section" id="casino">
-    <h2 class="mp-heading">CASINO · FREE SANDBOX</h2>
-    <?php if ($bbError): ?><div class="mp-sportsnote"><?= e($bbError) ?></div><?php elseif (!$bbGames): ?><div class="mp-sportsnote">BigBang Standard sandbox catalogue is not configured yet. Admin can connect the sandbox key in Admin → BigBang Sandbox.</div><?php else: ?>
-      <div class="mp-gamegrid">
-        <?php foreach (array_slice($bbGames, 0, 8) as $g): $thumb=(string)($g['thumbnail'] ?? ''); $safeThumb=filter_var($thumb,FILTER_VALIDATE_URL) && strtolower((string)parse_url($thumb,PHP_URL_SCHEME))==='https' && parse_url($thumb,PHP_URL_HOST); ?>
-          <a class="mp-game <?= $safeThumb ? '' : 'noimg' ?>" href="<?= e($u ? url('bigbang.php') : url('login.php')) ?>">
-            <?php if ($safeThumb): ?><img src="<?= e($thumb) ?>" alt="" loading="lazy"><?php endif; ?>
-            <span class="mp-game-label"><?= e($g['title'] ?? $g['name'] ?? 'Sandbox game') ?></span>
-          </a>
+
+  <section id="features" class="lsec">
+    <h2>Everything in one place</h2>
+    <div class="grid g3 feats">
+      <div class="feat2"><span>💼</span><h3>One wallet, three accounts</h3><p class="muted">Demo, INR and USDT balances with a live INR ⇄ USDT converter.</p></div>
+      <div class="feat2"><span>📈</span><h3>Pro charts</h3><p class="muted">TradingView charts with indicators and drawing tools, or the simple prediction chart.</p></div>
+      <div class="feat2"><span>⚡</span><h3>Real prices only</h3><p class="muted">Results come only from the live market price at expiry – nobody can change a trade's outcome.</p></div>
+      <div class="feat2"><span>🔐</span><h3>6-digit security PIN</h3><p class="muted">Every withdrawal needs your PIN, and you can lock the app with it too.</p></div>
+      <div class="feat2"><span>📲</span><h3>UPI, QR &amp; bank</h3><p class="muted">Deposit with a dynamic UPI QR, UPI apps or bank transfer. Withdraw to bank or UPI.</p></div>
+      <div class="feat2"><span>📧</span><h3>Statements by email</h3><p class="muted">Clear profit &amp; loss view and a full statement sent to your inbox on request.</p></div>
+    </div>
+  </section>
+
+  <section id="play" class="lsec">
+    <h2>Four ways to play</h2>
+    <div class="grid g3 hubgrid">
+      <a class="hubcard h1" href="<?= e(url('register.php')) ?>"><span class="hubic">📈</span><h3>Trading</h3><p>Predict UP or DOWN on live forex, crypto, gold and stocks with pro TradingView charts.</p><span class="hubtag">Real prices</span></a>
+      <?php if (cg_on()): ?><a class="hubcard h2" href="<?= e(url('register.php')) ?>"><span class="hubic">🎨</span><h3>Colour Game</h3><p>Pick Green, Violet or Red – or a number – before each period ends.</p>
+        <?php if ($cgLast): ?><div class="gresults sm"><?php foreach ($cgLast as $n): ?><span class="gdot <?= e(implode(' ', CG_COLORS[(int)$n])) ?>"><?= (int)$n ?></span><?php endforeach; ?></div><?php endif; ?>
+        <span class="hubtag">Entertainment · Demo coins</span></a><?php endif; ?>
+      <?php if (mk_on()): ?><a class="hubcard h3" href="<?= e(url('register.php')) ?>"><span class="hubic">🔢</span><h3>Lucky Number</h3><p>Kalyan-style open / close market with jodi, panna and a results analysis chart.</p>
+        <?php foreach ($mkToday as $row): ?><div class="mkres mono" style="font-size:16px;margin:2px 0"><span class="muted" style="font-size:12px;font-family:inherit"><?= e($row['name']) ?></span> <?= e(mk_text($row['r'])) ?></div><?php endforeach; ?>
+        <span class="hubtag">Entertainment · Demo coins</span></a><?php endif; ?>
+      <a class="hubcard h4" href="<?= e(url('register.php')) ?>"><span class="hubic">🎮</span><h3>BigBang Casino</h3><p>Play available Standard games through BigBang's free sandbox demo. Uses BigBang's virtual balance, not your TradePro wallet.</p><span class="hubtag">Free sandbox · Demo only</span></a>
+    </div>
+    <p class="muted" style="font-size:12px;margin-top:10px">The Colour Game and Lucky Number are for fun only: they use virtual Demo coins with no cash value, and every result is drawn at random by the server.</p>
+  </section>
+
+  <section id="markets" class="lsec">
+    <h2><span class="live"></span>Live markets</h2>
+    <div class="card">
+      <div class="tablewrap"><table class="rt">
+        <tr><th>Market</th><th>Type</th><th class="right">Live price</th><th class="right">Payout</th></tr>
+        <?php foreach ($assets as $a): $q = $quotes[(int)$a['id']] ?? null; ?>
+          <tr><td><b><?= e($a['name']) ?></b> <span class="muted"><?= e($a['symbol']) ?></span></td>
+              <td class="muted"><?= e(ucfirst($a['category'])) ?></td>
+              <td class="right mono" data-px="<?= (int)$a['id'] ?>" data-dec="<?= (int)$a['decimals'] ?>"><?= e($fmtp($a, $q)) ?><?= $q && $q['closed'] ? ' <span class="badge pending">closed</span>' : '' ?></td>
+              <td class="right green"><b><?= e(rtrim(rtrim(number_format(asset_payout($a), 2), '0'), '.')) ?>%</b></td></tr>
         <?php endforeach; ?>
-      </div>
-      <p style="text-align:right;margin:7px 0"><a href="<?= e($u ? url('bigbang.php') : url('login.php')) ?>" style="color:#075e58;font-weight:900">View all Standard demo games →</a></p>
-    <?php endif; ?>
+      </table></div>
+    </div>
   </section>
-  <section class="mp-section" id="providers">
-    <h2 class="mp-heading">OUR PROVIDERS</h2>
-    <?php if ($bbProviders): ?><div class="mp-providergrid"><?php foreach (array_slice($bbProviders,0,12) as $provider): ?><div class="mp-provider"><?= e($provider) ?></div><?php endforeach; ?></div><?php else: ?><div class="mp-sportsnote">Provider names will appear here when the BigBang Standard sandbox catalogue is available.</div><?php endif; ?>
+
+  <section id="faq" class="lsec">
+    <h2>Questions</h2>
+    <div class="faq">
+      <details><summary>Where do the prices come from?</summary><p class="muted">Directly from live market data providers (Binance for crypto, Yahoo Finance and others for forex, gold and stocks). Quotes can be slightly delayed. Stocks and forex are closed outside market hours.</p></details>
+      <details><summary>Can the result of a trade be changed?</summary><p class="muted">No. A trade wins if the live price at expiry is on the side you predicted. If the price is exactly equal, your stake is returned.</p></details>
+      <details><summary>How do deposits and withdrawals work?</summary><p class="muted">Deposit by UPI (QR or app), bank transfer or USDT and submit your reference; an admin verifies it. Withdrawals need your 6-digit PIN and are paid out manually.</p></details>
+      <details><summary>Is there a demo account?</summary><p class="muted">Yes – every new user gets a virtual demo balance to practise. Demo money cannot be withdrawn.</p></details>
+      <details><summary>Are BigBang games free?</summary><p class="muted">Available Standard games can be launched in BigBang sandbox demo mode using BigBang virtual demo balance. Premium titles may not be available, and TradePro wallet funds are not used.</p></details>
+    </div>
   </section>
-  <section class="mp-section" id="new-launch">
-    <h2 class="mp-heading">NEW LAUNCH</h2>
-    <?php if ($bbGames): ?><div class="mp-gamegrid"><?php foreach (array_slice($bbGames,8,4) as $g): $thumb=(string)($g['thumbnail'] ?? ''); $safeThumb=filter_var($thumb,FILTER_VALIDATE_URL) && strtolower((string)parse_url($thumb,PHP_URL_SCHEME))==='https' && parse_url($thumb,PHP_URL_HOST); ?>
-      <a class="mp-game <?= $safeThumb ? '' : 'noimg' ?>" href="<?= e($u ? url('bigbang.php') : url('login.php')) ?>"><?php if($safeThumb): ?><img src="<?= e($thumb) ?>" alt="" loading="lazy"><?php endif; ?><span class="mp-game-label"><?= e($g['title'] ?? $g['name'] ?? 'New demo game') ?></span></a>
-    <?php endforeach; ?></div><?php else: ?><div class="mp-sportsnote">New sandbox titles will appear here.</div><?php endif; ?>
+
+  <section class="lsec">
+    <h2>Built to be fair and safe</h2>
+    <div class="grid g4 keep2 safegrid">
+      <div class="safe"><b>🔒</b><h3>Real prices</h3><p class="muted">Outcomes follow live market prices only.</p></div>
+      <div class="safe"><b>🎲</b><h3>Random games</h3><p class="muted">Game results are drawn by the server's secure random generator.</p></div>
+      <div class="safe"><b>🔐</b><h3>PIN protected</h3><p class="muted">6-digit PIN for withdrawals and the games.</p></div>
+      <div class="safe"><b>📧</b><h3>Clear records</h3><p class="muted">Profit &amp; loss view and emailed statements.</p></div>
+    </div>
   </section>
-  <div class="mp-foot"><b>🔒 Secure connection</b><p>BigBang demo titles use the provider's virtual sandbox balance. TradePro wallets are not connected to game play.</p><p>© <?= date('Y') ?> <?= e($siteName) ?></p></div>
-</main>
+
+  <section class="lcta">
+    <h2>Ready to try it?</h2>
+    <p class="muted">Create a free account in a minute and practise on the demo balance.</p>
+    <a class="btn green lg" href="<?= e(url('register.php')) ?>">Create free account</a>
+  </section>
+
+  <footer class="lfoot">
+    <div><?= logo_html() ?></div>
+    <div class="lfl"><a href="#play">Play</a><a href="#markets">Markets</a><a href="#faq">FAQ</a><a href="<?= e(url('login.php')) ?>">Log in</a><a href="<?= e(url('register.php')) ?>">Sign up</a></div>
+  </footer>
+
+  <p class="muted center" style="font-size:12px;margin-top:18px">Trading carries a high risk of losing the money you put in – only trade with funds you can afford to lose. Prices are market quotes that may be delayed. This service may not be available or legal in every country; make sure you are allowed to use it where you live. © <?= date('Y') ?> <?= e($name) ?></p>
+</div>
+<div class="stickycta"><a class="btn ghost" href="<?= e(url('login.php')) ?>">Log in</a><a class="btn green" href="<?= e(url('register.php')) ?>">Start free demo</a></div>
+<script>
+// scroll-reveal + count-up for the stats
+(function(){
+  var els = document.querySelectorAll('.lsec, .lstats div, .hubcard, .step, .feat2, .safe, .lcta');
+  els.forEach(function(el){ el.classList.add('reveal'); });
+  if (!('IntersectionObserver' in window)) { els.forEach(function(el){ el.classList.add('in'); }); return; }
+  var io = new IntersectionObserver(function(es){ es.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, {threshold:.08});
+  els.forEach(function(el){ io.observe(el); });
+  document.querySelectorAll('.lstats b').forEach(function(b){
+    var m = b.textContent.match(/^([^\d]*)(\d+(?:\.\d+)?)(.*)$/); if (!m) return;
+    var to = parseFloat(m[2]), dec = (m[2].split('.')[1] || '').length, t0 = null;
+    function step(ts){ t0 = t0 || ts; var p = Math.min(1, (ts - t0) / 900); b.textContent = m[1] + (to * p).toFixed(dec) + m[3]; if (p < 1) requestAnimationFrame(step); }
+    var o = new IntersectionObserver(function(es){ if (es[0].isIntersecting) { requestAnimationFrame(step); o.disconnect(); } }); o.observe(b);
+  });
+})();
+(function(){
+  function upd(){
+    fetch(<?= json_encode(url('api/prices.php')) ?>).then(function(r){return r.json()}).then(function(j){
+      if(!j.ok)return;
+      document.querySelectorAll('[data-px]').forEach(function(el){
+        var p=j.prices[el.dataset.px]; if(p===undefined)return;
+        var t=Number(p.price).toLocaleString(undefined,{minimumFractionDigits:+el.dataset.dec,maximumFractionDigits:+el.dataset.dec});
+        if(el.firstChild&&el.firstChild.nodeType===3)el.firstChild.nodeValue=t;else el.textContent=t;
+      });
+    }).catch(function(){});
+  }
+  setInterval(upd,8000);
+})();
+</script>
 </body></html>
