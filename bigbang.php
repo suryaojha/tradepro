@@ -12,6 +12,10 @@ $launchUrl = '';
 $launchTitle = '';
 $providerFilter = trim((string)($_GET['provider'] ?? ''));
 $search = trim((string)($_GET['q'] ?? ''));
+$page = max(1, min(100000, (int)($_GET['page'] ?? 1)));
+$perPage = 30;
+$totalGames = 0;
+$totalPages = 1;
 
 try {
     if (!$keyReady) {
@@ -50,13 +54,15 @@ try {
         $launchUrl = $candidate;
         $launchTitle = (string)($selected['title'] ?? $selected['name'] ?? 'Demo game');
     } else {
-        $params = ['type' => 'standard', 'limit' => 5000];
+        $params = ['type' => 'standard', 'limit' => $perPage, 'offset' => ($page - 1) * $perPage];
         if ($providerFilter !== '') $params['provider'] = $providerFilter;
         if ($search !== '') $params['search'] = $search;
         $query = http_build_query($params);
         $catalog = bigbang_request('GET', '/games?' . $query);
         $rows = $catalog['data'] ?? [];
         if (!is_array($rows)) throw new RuntimeException('BigBang returned an unexpected game catalog format.');
+        $totalGames = (int)($catalog['pagination']['total'] ?? count($rows));
+        $totalPages = max(1, (int)ceil($totalGames / $perPage));
         $games = array_values(array_filter($rows, static function ($g) {
             return is_array($g)
                 && (int)($g['id'] ?? 0) > 0
@@ -99,7 +105,7 @@ try {
     <button class="btn" type="submit">Search</button>
     <?php if ($search !== '' || $providerFilter !== ''): ?><a class="btn ghost" href="<?= e(url('bigbang.php')) ?>">Clear</a><?php endif; ?>
   </form>
-  <div class="bb-count"><?= count($games) ?> sandbox games available</div>
+  <div class="bb-count">Showing <?= count($games) ?> of <?= $totalGames ?> sandbox games · <?= $perPage ?> per page</div>
   <?php if ($games): ?>
     <div class="bb-grid" style="margin-top:14px">
     <?php foreach ($games as $g): ?>
@@ -117,6 +123,18 @@ try {
       </article>
     <?php endforeach; ?>
     </div>
+    <?php if ($totalPages > 1): ?>
+      <nav class="bb-pagination" aria-label="Game pages" style="display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin:22px 0">
+        <?php
+          $pageUrl = static function (int $p) use ($search, $providerFilter): string {
+              return url('bigbang.php?' . http_build_query(array_filter(['q' => $search, 'provider' => $providerFilter, 'page' => $p], static fn($v) => $v !== '')));
+          };
+        ?>
+        <?php if ($page > 1): ?><a class="btn ghost sm" href="<?= e($pageUrl($page - 1)) ?>">← Previous</a><?php endif; ?>
+        <span class="muted" style="font-size:13px">Page <?= $page ?> of <?= $totalPages ?> · <?= $totalGames ?> games</span>
+        <?php if ($page < $totalPages): ?><a class="btn ghost sm" href="<?= e($pageUrl($page + 1)) ?>">Next →</a><?php endif; ?>
+      </nav>
+    <?php endif; ?>
   <?php else: ?>
     <div class="card bb-empty"><h2>No sandbox games returned</h2><p class="muted">The key may have no Standard providers enabled, or the provider filter returned no matches. Check provider access in the BigBang dashboard.</p></div>
   <?php endif; ?>
