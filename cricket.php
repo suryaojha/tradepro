@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/includes/cricketdata.php';
 require_once __DIR__ . '/includes/layout.php';
 $u = require_user();
 $matches = [];
