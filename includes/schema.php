@@ -3,7 +3,7 @@
  * Database schema, defaults and upgrades. Idempotent: safe to run any number of times.
  * Used by install.php (and automatically requested by bootstrap when the version is old).
  */
-const SCHEMA_VERSION = 13;
+const SCHEMA_VERSION = 14;
 
 /** TradingView symbols for the starter markets (admin can change them per market). */
 function default_tv_symbols(): array
@@ -274,6 +274,18 @@ function schema_install(PDO $pdo): array
         KEY `idx_pr_status` (`status`,`type`),
         KEY `idx_pr_user` (`user_id`),
         CONSTRAINT `fk_pr_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+    'api_keys' => "CREATE TABLE IF NOT EXISTS `api_keys` (
+        `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        `provider` VARCHAR(60) NOT NULL,
+        `label` VARCHAR(100) NOT NULL,
+        `api_key_enc` TEXT NOT NULL,
+        `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+        `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uq_api_provider_label` (`provider`,`label`),
+        KEY `idx_api_provider_active` (`provider`,`is_active`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
     'settings' => "CREATE TABLE IF NOT EXISTS `settings` (
         `k` VARCHAR(60) NOT NULL,
