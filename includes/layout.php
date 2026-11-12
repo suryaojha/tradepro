@@ -144,7 +144,7 @@ function account_switcher(array $u, array $wallets): void
 function user_topbar(array $u, string $active = ''): void
 {
     $w = wallets_of((int)$u['id']);
-    $links = ['trade.php' => ['Trade', 'trade'], 'games.php' => ['Play', 'games'], 'wallet.php' => ['Wallet', 'wallet'], 'history.php' => ['History', 'history'], 'profile.php' => ['Profile', 'user']];
+    $links = ['trade.php' => ['Trade', 'trade'], 'games.php' => ['Play', 'games'], 'cricket.php' => ['Cricket', 'activity'], 'wallet.php' => ['Wallet', 'wallet'], 'history.php' => ['History', 'history'], 'profile.php' => ['Profile', 'user']];
     ?>
 <header class="topbar">
   <?= logo_html() ?>
